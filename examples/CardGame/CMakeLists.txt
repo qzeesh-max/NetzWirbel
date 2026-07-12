@@ -1,0 +1,6 @@
+add_executable(CardGame main.cpp)
+target_link_libraries(CardGame NetzWirbel)
+set_target_properties(CardGame PROPERTIES SUFFIX ".js")
+if (EMSCRIPTEN)
+    set_target_properties(CardGame PROPERTIES LINK_FLAGS "-s EXPORTED_FUNCTIONS=_main,_malloc,_free,_netzwirbel_init,_netzwirbel_tick -s EXPORTED_RUNTIME_METHODS=ccall,cwrap,UTF8ToString,stringToUTF8,lengthBytesUTF8,wasmMemory -s ALLOW_MEMORY_GROWTH=1")
+endif()

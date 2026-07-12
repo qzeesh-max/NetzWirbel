@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Odyssey Trader (NetzWirbel)</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <script src="/js/netzwirbel_bridge.js"></script>
+    <script>
+        const capacity = 8192;
+        
+        const config = {
+            onRuntimeInitialized: function() {
+                const cppToJsOffset = Module._malloc(capacity * 32 + 24);
+                const jsToCppOffset = Module._malloc(capacity * 64 + 24);
+                
+                const bridge = new NetzWirbelBridge(
+                    Module.wasmMemory, 
+                    cppToJsOffset, 
+                    jsToCppOffset, 
+                    capacity,
+                    Module._malloc,
+                    Module._free
+                );
+                
+                startNetzWirbelLoop(bridge);
+                
+                Module.ccall('netzwirbel_init', null, ['number', 'number', 'number'], 
+                    [cppToJsOffset, jsToCppOffset, capacity]);
+                
+                setInterval(() => {
+                    Module.ccall('netzwirbel_tick', null, ['number'], [performance.now()]);
+                }, 16);
+            }
+        };
+        var Module = config;
+    </script>
+    <script src="OdysseyTrader.js"></script>
+</body>
+</html>

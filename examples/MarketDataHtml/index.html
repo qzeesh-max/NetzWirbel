@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NetzWirbel Market Data (HTML/CSS Bound)</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #121212;
+            color: #e0e0e0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .market-grid {
+            flex: 1;
+            overflow: auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr;
+            align-content: start;
+        }
+
+        .cell {
+            padding: 0 8px;
+            border-right: 1px solid #333;
+            border-bottom: 1px solid #333;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            box-sizing: border-box;
+            height: 35px;
+            display: flex;
+            align-items: center;
+        }
+
+        .header {
+            background-color: #1a1a1a;
+            font-weight: bold;
+            border-bottom: 2px solid #444;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .row-even { background-color: #1e1e1e; }
+        .row-odd { background-color: #252525; }
+
+        .price-up { color: #00ff00; }
+        .price-down { color: #ff4444; }
+
+        .stats-pane {
+            height: 40px;
+            background-color: #000;
+            border-top: 2px solid #00e5ff;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="market-grid" id="grid">
+        <!-- Headers -->
+        <div class="cell header">Symbol</div>
+        <div class="cell header">Bid Size</div>
+        <div class="cell header">Bid Price</div>
+        <div class="cell header">Ask Price</div>
+        <div class="cell header">Ask Size</div>
+        <div class="cell header">Last Price</div>
+        <div class="cell header">Total Vol</div>
+        
+        <!-- Generated dynamically in C++ but could be here. Let's pre-generate 65 rows here for binding -->
+        <script>
+            const grid = document.getElementById('grid');
+            for (let i = 0; i < 65; i++) {
+                const sym = `SYM${i}`;
+                const rowClass = i % 2 === 0 ? 'row-even' : 'row-odd';
+                
+                // We create cells with specific data-attributes for C++ binding
+                grid.insertAdjacentHTML('beforeend', `
+                    <div class="cell ${rowClass}" id="sym-${sym}">${sym}</div>
+                    <div class="cell ${rowClass}" id="bid-sz-${sym}">0</div>
+                    <div class="cell ${rowClass}" id="bid-px-${sym}">0.00</div>
+                    <div class="cell ${rowClass}" id="ask-px-${sym}">0.00</div>
+                    <div class="cell ${rowClass}" id="ask-sz-${sym}">0</div>
+                    <div class="cell ${rowClass}" id="last-px-${sym}">0.00</div>
+                    <div class="cell ${rowClass}" id="vol-${sym}">0</div>
+                `);
+            }
+        </script>
+    </div>
+    
+    <div class="stats-pane" id="stats">Performance Stats: initializing...</div>
+
+    <script src="/js/netzwirbel_bridge.js"></script>
+    <script>
+        const capacity = 2048; // increased capacity for high throughput
+        
+        const config = {
+            onRuntimeInitialized: function() {
+                const cppToJsOffset = Module._malloc(capacity * 32 + 24);
+                const jsToCppOffset = Module._malloc(capacity * 64 + 24);
+                
+                const bridge = new NetzWirbelBridge(
+                    Module.wasmMemory, 
+                    cppToJsOffset, 
+                    jsToCppOffset, 
+                    capacity,
+                    Module._malloc,
+                    Module._free
+                );
+                
+                startNetzWirbelLoop(bridge);
+                
+                Module.ccall('netzwirbel_init', null, ['number', 'number', 'number'], 
+                    [cppToJsOffset, jsToCppOffset, capacity]);
+                
+                setInterval(() => {
+                    Module.ccall('netzwirbel_tick', null, ['number'], [performance.now()]);
+                }, 16);
+            }
+        };
+        var Module = config;
+    </script>
+    <script src="MarketDataHtml.js"></script>
+</body>
+</html>

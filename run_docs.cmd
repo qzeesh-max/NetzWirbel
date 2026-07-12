@@ -1,0 +1,3 @@
+@echo off
+echo Starting NetzWirbel Documentation Server...
+node docs_server.js

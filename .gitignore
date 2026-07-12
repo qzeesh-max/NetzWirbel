@@ -1,0 +1,10 @@
+build/
+node_modules/
+.DS_Store
+build-native/
+lib/
+store/
+log/
+*.py
+*.json
+recovered.hpp

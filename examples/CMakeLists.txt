@@ -1,0 +1,8 @@
+add_subdirectory(MarketData)
+add_subdirectory(MarketDataHtml)
+add_subdirectory(Calculator)
+add_subdirectory(CalculatorHtml)
+add_subdirectory(GalacticDisplay)
+add_subdirectory(CardGame)
+add_subdirectory(BanzaiExchange)
+add_subdirectory(OdysseyTrader)

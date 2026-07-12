@@ -1,0 +1,298 @@
+/*
+ * Copyright (C) 2026 NetzWirbel Contributors
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#include "NetzWirbel/DOM/Element.hpp"
+#include "NetzWirbel/Context.hpp"
+#include "NetzWirbel/Command.hpp"
+#include <cstring>
+
+namespace NetzWirbel {
+
+uint32_t Element::next_id_ = 1; // 0 usually reserved for null/window/document
+
+Element::Element(Context* ctx, const std::string& tag_name) 
+    : ctx_(ctx), id_(next_id_++), tag_name_(tag_name) {
+    
+    // Allocate memory for the tag name to send to JS
+    char* tag_ptr = new char[tag_name_.size() + 1];
+    std::strcpy(tag_ptr, tag_name_.c_str());
+
+    Command cmd;
+    cmd.type = CommandType::CREATE_ELEMENT;
+    cmd.target_id = id_;
+    cmd.arg1 = reinterpret_cast<uint32_t>(tag_ptr);
+    cmd.arg2 = static_cast<uint32_t>(tag_name_.size());
+    
+    ctx_->send_command(cmd);
+}
+
+Element::Element(Context* ctx, uint32_t tag_name_id) 
+    : ctx_(ctx), id_(next_id_++), tag_name_("") {
+    
+    Command cmd;
+    cmd.type = CommandType::CREATE_ELEMENT;
+    cmd.target_id = id_;
+    cmd.arg1 = tag_name_id;
+    cmd.arg2 = 0xFFFFFFFF; // ID indicator
+    
+    ctx_->send_command(cmd);
+}
+
+Element::~Element() {
+    // The element is either already unregistered from the context,
+    // or the context is being destroyed. No need to unregister here.
+}
+
+void Element::set_attribute(const std::string& key, const std::string& value) {
+    char* key_ptr = new char[key.size() + 1];
+    std::strcpy(key_ptr, key.c_str());
+    
+    char* val_ptr = new char[value.size() + 1];
+    std::strcpy(val_ptr, value.c_str());
+
+    Command cmd;
+    cmd.type = CommandType::SET_ATTRIBUTE;
+    cmd.target_id = id_;
+    cmd.arg1 = reinterpret_cast<uint32_t>(key_ptr);
+    cmd.arg2 = static_cast<uint32_t>(key.size());
+    cmd.arg3 = reinterpret_cast<uint32_t>(val_ptr);
+    cmd.arg4 = static_cast<uint32_t>(value.size());
+
+    ctx_->send_command(cmd);
+}
+
+void Element::set_attribute(uint32_t key_id, const std::string& value) {
+    char* val_ptr = new char[value.size() + 1];
+    std::strcpy(val_ptr, value.c_str());
+
+    Command cmd;
+    cmd.type = CommandType::SET_ATTRIBUTE;
+    cmd.target_id = id_;
+    cmd.arg1 = key_id;
+    cmd.arg2 = 0xFFFFFFFF;
+    cmd.arg3 = reinterpret_cast<uint32_t>(val_ptr);
+    cmd.arg4 = static_cast<uint32_t>(value.size());
+
+    ctx_->send_command(cmd);
+}
+
+void Element::set_attribute(uint32_t key_id, uint32_t value_id) {
+    Command cmd;
+    cmd.type = CommandType::SET_ATTRIBUTE;
+    cmd.target_id = id_;
+    cmd.arg1 = key_id;
+    cmd.arg2 = 0xFFFFFFFF;
+    cmd.arg3 = value_id;
+    cmd.arg4 = 0xFFFFFFFF;
+
+    ctx_->send_command(cmd);
+}
+
+void Element::set_property(const std::string& key, const std::string& value) {
+    char* key_ptr = new char[key.size() + 1];
+    std::strcpy(key_ptr, key.c_str());
+    
+    char* val_ptr = new char[value.size() + 1];
+    std::strcpy(val_ptr, value.c_str());
+
+    Command cmd;
+    cmd.type = CommandType::SET_PROPERTY_STRING;
+    cmd.target_id = id_;
+    cmd.arg1 = reinterpret_cast<uint32_t>(key_ptr);
+    cmd.arg2 = static_cast<uint32_t>(key.size());
+    cmd.arg3 = reinterpret_cast<uint32_t>(val_ptr);
+    cmd.arg4 = static_cast<uint32_t>(value.size());
+
+    ctx_->send_command(cmd);
+}
+
+void Element::set_property(uint32_t key_id, const std::string& value) {
+    char* val_ptr = new char[value.size() + 1];
+    std::strcpy(val_ptr, value.c_str());
+
+    Command cmd;
+    cmd.type = CommandType::SET_PROPERTY_STRING;
+    cmd.target_id = id_;
+    cmd.arg1 = key_id;
+    cmd.arg2 = 0xFFFFFFFF;
+    cmd.arg3 = reinterpret_cast<uint32_t>(val_ptr);
+    cmd.arg4 = static_cast<uint32_t>(value.size());
+
+    ctx_->send_command(cmd);
+}
+
+void Element::set_property(uint32_t key_id, uint32_t value_id) {
+    Command cmd;
+    cmd.type = CommandType::SET_PROPERTY_STRING;
+    cmd.target_id = id_;
+    cmd.arg1 = key_id;
+    cmd.arg2 = 0xFFFFFFFF;
+    cmd.arg3 = value_id;
+    cmd.arg4 = 0xFFFFFFFF;
+
+    ctx_->send_command(cmd);
+}
+
+void Element::set_property(const std::string& key, bool value) {
+    char* key_ptr = new char[key.size() + 1];
+    std::strcpy(key_ptr, key.c_str());
+
+    Command cmd;
+    cmd.type = CommandType::SET_PROPERTY_BOOL;
+    cmd.target_id = id_;
+    cmd.arg1 = reinterpret_cast<uint32_t>(key_ptr);
+    cmd.arg2 = static_cast<uint32_t>(key.size());
+    cmd.arg3 = value ? 1 : 0;
+
+    ctx_->send_command(cmd);
+}
+
+void Element::set_property(uint32_t key_id, bool value) {
+    Command cmd;
+    cmd.type = CommandType::SET_PROPERTY_BOOL;
+    cmd.target_id = id_;
+    cmd.arg1 = key_id;
+    cmd.arg2 = 0xFFFFFFFF;
+    cmd.arg3 = value ? 1 : 0;
+
+    ctx_->send_command(cmd);
+}
+
+void Element::set_property(const std::string& key, double value) {
+    char* key_ptr = new char[key.size() + 1];
+    std::strcpy(key_ptr, key.c_str());
+
+    Command cmd;
+    cmd.type = CommandType::SET_PROPERTY_NUMBER;
+    cmd.target_id = id_;
+    cmd.arg1 = reinterpret_cast<uint32_t>(key_ptr);
+    cmd.arg2 = static_cast<uint32_t>(key.size());
+    cmd.num_val = value;
+
+    ctx_->send_command(cmd);
+}
+
+void Element::set_property(uint32_t key_id, double value) {
+    Command cmd;
+    cmd.type = CommandType::SET_PROPERTY_NUMBER;
+    cmd.target_id = id_;
+    cmd.arg1 = key_id;
+    cmd.arg2 = 0xFFFFFFFF;
+    cmd.num_val = value;
+
+    ctx_->send_command(cmd);
+}
+
+void Element::set_text_content(const std::string& text) {
+    char* text_ptr = new char[text.size() + 1];
+    std::strcpy(text_ptr, text.c_str());
+
+    Command cmd;
+    cmd.type = CommandType::SET_TEXT_CONTENT;
+    cmd.target_id = id_;
+    cmd.arg1 = reinterpret_cast<uint32_t>(text_ptr);
+    cmd.arg2 = static_cast<uint32_t>(text.size());
+
+    ctx_->send_command(cmd);
+}
+
+void Element::set_text_content(uint32_t text_id) {
+    Command cmd;
+    cmd.type = CommandType::SET_TEXT_CONTENT;
+    cmd.target_id = id_;
+    cmd.arg1 = text_id;
+    cmd.arg2 = 0xFFFFFFFF;
+
+    ctx_->send_command(cmd);
+}
+
+void Element::append_child(std::shared_ptr<Element> child) {
+    children_.push_back(child);
+
+    Command cmd;
+    cmd.type = CommandType::APPEND_CHILD;
+    cmd.target_id = id_;
+    cmd.arg1 = child->get_id();
+
+    ctx_->send_command(cmd);
+}
+
+void Element::focus() {
+    Command cmd;
+    cmd.type = CommandType::FOCUS;
+    cmd.target_id = id_;
+    ctx_->send_command(cmd);
+}
+
+void Element::select() {
+    Command cmd;
+    cmd.type = CommandType::SELECT;
+    cmd.target_id = id_;
+    ctx_->send_command(cmd);
+}
+
+void Element::add_event_listener(const std::string& event_type, std::function<void(const Event&)> callback) {
+    bool is_first = event_listeners_[event_type].empty();
+    event_listeners_[event_type].push_back(std::move(callback));
+
+    // Only send the command to JS to add the listener if this is the first one for this type
+    if (is_first) {
+        char* type_ptr = new char[event_type.size() + 1];
+        std::strcpy(type_ptr, event_type.c_str());
+
+        Command cmd;
+        cmd.type = CommandType::ADD_EVENT_LISTENER;
+        cmd.target_id = id_;
+        cmd.arg1 = reinterpret_cast<uint32_t>(type_ptr);
+        cmd.arg2 = static_cast<uint32_t>(event_type.size());
+
+        ctx_->send_command(cmd);
+    }
+}
+
+void Element::add_event_listener(uint32_t event_type_id, std::function<void(const Event&)> callback) {
+    std::string internal_key = ctx_->get_string(event_type_id);
+    if (internal_key.empty()) return; // Invalid ID
+
+    bool is_first = event_listeners_[internal_key].empty();
+    event_listeners_[internal_key].push_back(std::move(callback));
+
+    if (is_first) {
+        Command cmd;
+        cmd.type = CommandType::ADD_EVENT_LISTENER;
+        cmd.target_id = id_;
+        cmd.arg1 = event_type_id;
+        cmd.arg2 = 0xFFFFFFFF;
+
+        ctx_->send_command(cmd);
+    }
+}
+
+void Element::handle_event(const Event& event) {
+    auto it = event_listeners_.find(event.get_type());
+    if (it != event_listeners_.end()) {
+        for (const auto& listener : it->second) {
+            listener(event);
+        }
+    }
+}
+
+void Element::handle_property_changed(const std::string& prop_name, const std::string& value) {}
+void Element::handle_property_changed(const std::string& prop_name, bool value) {}
+void Element::handle_property_changed(const std::string& prop_name, double value) {}
+
+} // namespace NetzWirbel
