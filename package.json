@@ -1,0 +1,24 @@
+{
+  "name": "netzwirbel",
+  "version": "1.0.0",
+  "main": "docs_server.js",
+  "directories": {
+    "doc": "docs",
+    "example": "examples",
+    "test": "tests"
+  },
+  "scripts": {
+    "test:coverage": "npm run build:coverage && cmake --build build --target coverage_report",
+    "build:coverage": "emcmake cmake -S . -B build -DNETZWIRBEL_ENABLE_COVERAGE=ON && cmake --build build -j 4",
+    "build:backend": "cmake -S examples/OrderMatchBackend -B build/backend && cmake --build build/backend",
+    "coverage": "node server/coverage_server.js",
+    "examples": "node server/orchestrator.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
