@@ -531,44 +531,49 @@ void handle_cancel_order(const std::shared_ptr<ClientConnection>& client, const 
     }
 }
 
-void handle_client_data(const std::shared_ptr<ClientConnection>& client) {
-    while (true) {
-        if (client->read_buf.size() < sizeof(MsgHeader)) return;
-        
-        const MsgHeader &hdr = *reinterpret_cast<MsgHeader*>(client->read_buf.data());
+bool handle_client_data(const std::shared_ptr<ClientConnection>& client) {
+    const auto *data = client->read_buf.data();
+    size_t remaining_size = client->read_buf.size();
+    while (remaining_size >= sizeof(MsgHeader)) {
+        auto &hdr = *reinterpret_cast<const MsgHeader*>(data);
         uint16_t type = ntohs(hdr.type);
         uint32_t length = ntohl(hdr.length);
 
-        if (client->read_buf.size() < length) return;
+        if (length & 15) [[unlikely]]
+        {
+            std::cerr << "Invalid message length: " << length << " - protocol requires length to be divisible by 16" << std::endl;
+            return false;
+        }
+
+        if (remaining_size < length) return true;
 
         // Process message
         MsgType msg_type = static_cast<MsgType>(type);
         if (msg_type == MsgType::LogonReq) {
-            const LogonReqMsg &req = reinterpret_cast<const NetMsg<LogonReqMsg>*>(client->read_buf.data())->payload;
+            const auto &req = reinterpret_cast<const NetMsg<LogonReqMsg>*>(data)->payload;
             handle_logon(client, req);
         } else if (client->username.empty()) {
             std::cout << "Received non-logon message on unauthenticated connection. Disconnecting." << std::endl;
-            close(client->fd);
-            return;
+            return false;
         } else {
             switch (msg_type) {
                 case MsgType::NewOrder: {
-                    const NewOrderMsg &req = reinterpret_cast<const NetMsg<NewOrderMsg>*>(client->read_buf.data())->payload;
+                    const auto &req = reinterpret_cast<const NetMsg<NewOrderMsg>*>(data)->payload;
                     handle_new_order(client, req);
                     break;
                 }
                 case MsgType::OrderReplace: {
-                    const OrderReplaceMsg &req = reinterpret_cast<const NetMsg<OrderReplaceMsg>*>(client->read_buf.data())->payload;
+                    const auto&req = reinterpret_cast<const NetMsg<OrderReplaceMsg>*>(data)->payload;
                     handle_replace_order(client, req);
                     break;
                 }
                 case MsgType::OrderCancel: {
-                    const OrderCancelMsg &req = reinterpret_cast<const NetMsg<OrderCancelMsg>*>(client->read_buf.data())->payload;
+                    const auto &req = reinterpret_cast<const NetMsg<OrderCancelMsg>*>(data)->payload;
                     handle_cancel_order(client, req);
                     break;
                 }
                 case MsgType::MDRequest: {
-                    const MDRequestMsg &req = reinterpret_cast<const NetMsg<MDRequestMsg>*>(client->read_buf.data())->payload;
+                    const auto &req = reinterpret_cast<const NetMsg<MDRequestMsg>*>(data)->payload;
                     std::string sym = req.symbol;
                     if (req.sub_type == 0) {
                         client->subscriptions.insert(sym);
@@ -591,10 +596,12 @@ void handle_client_data(const std::shared_ptr<ClientConnection>& client) {
                     break;
             }
         }
-        // Remove packet from client read buffer
-        client->read_buf.erase(client->read_buf.begin(), client->read_buf.begin() + length);
+        data += length;
+        remaining_size -= length;
     }
-    
+    client->read_buf.erase(client->read_buf.begin(), client->read_buf.begin() + (client->read_buf.size() - remaining_size));
+
+    return true;
 }
 
 int main(int argc, char** argv) {
@@ -698,7 +705,12 @@ int main(int argc, char** argv) {
                     continue;
                 } else {
                     client->read_buf.insert(client->read_buf.end(), buffer, buffer + read_bytes);
-                    handle_client_data(client);
+                    if (!handle_client_data(client))
+                    {
+                        close(client->fd);
+                        it = g_clients.erase(it);
+                        continue;
+                    }
                 }
             }
             ++it;

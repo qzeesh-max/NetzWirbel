@@ -1301,20 +1301,25 @@ private:
     }
   }
 
-  void handle_binary_message(const uint8_t *data, size_t size) {
-    socketRecvBuf_.insert(socketRecvBuf_.end(), data, data + size);
+  void handle_binary_message(const uint8_t *buf, size_t size) {
+    socketRecvBuf_.insert(socketRecvBuf_.end(), buf, buf + size);
 
-    while (socketRecvBuf_.size() >= sizeof(MsgHeader)) {
-      const MsgHeader &hdr = *reinterpret_cast<const MsgHeader*>(socketRecvBuf_.data());
+    const auto * data = socketRecvBuf_.data();
+    auto remaining_size = socketRecvBuf_.size();
+
+    while (remaining_size >= sizeof(MsgHeader)) {
+      const auto &hdr = *reinterpret_cast<const MsgHeader*>(data);
       
       uint16_t type = ntohs(hdr.type);
       uint32_t length = ntohl(hdr.length);
 
-      if (socketRecvBuf_.size() < length)
+      if (remaining_size < length)
         return;
 
       if (length & 15) [[unlikely]]
       {
+        std::cout << "Invalid message length: " << length << " - protocol requires length to be divisible by 16" << std::endl;
+        
         if (ws_ > 0) {
             emscripten_websocket_delete(ws_);
             ws_ = 0;
@@ -1332,7 +1337,7 @@ private:
 
       switch (msg_type) {
       case MsgType::LogonResp: {
-        const LogonRespMsg & msg = reinterpret_cast<const NetMsg<LogonRespMsg>*>(socketRecvBuf_.data())->payload;
+        const auto & msg = reinterpret_cast<const NetMsg<LogonRespMsg>*>(data)->payload;
         if (length >= sizeof(msg)) {
           if (msg.status == 0) {
             connected_state = 2;
@@ -1355,7 +1360,7 @@ private:
         break;
       }
       case MsgType::LogonState: {
-        const LogonStateMsg& msg = reinterpret_cast<const NetMsg<LogonStateMsg>*>(socketRecvBuf_.data())->payload;
+        const auto& msg = reinterpret_cast<const NetMsg<LogonStateMsg>*>(data)->payload;
 
           size_t offset = sizeof(NetMsg<LogonStateMsg>);
           orders_.clear();
@@ -1364,7 +1369,7 @@ private:
           rejections_.clear();
 
           for (uint32_t i = 0; i < msg.order_count; ++i) {
-            const LogonStateOrder &lso = *reinterpret_cast<const LogonStateOrder*>(socketRecvBuf_.data() + offset);
+            const auto& lso = *reinterpret_cast<const LogonStateOrder*>(data + offset);
             offset += sizeof(lso);
 
             OdysseyOrderData o;
@@ -1393,7 +1398,7 @@ private:
           }
 
           for (uint32_t i = 0; i < msg.execution_count; ++i) {
-            const LogonStateExecution &lse = *reinterpret_cast<const LogonStateExecution*>(socketRecvBuf_.data() + offset);
+            const auto& lse = *reinterpret_cast<const LogonStateExecution*>(data + offset);
             offset += sizeof(lse);
 
             OdysseyExecutionData e;
@@ -1410,7 +1415,7 @@ private:
           }
 
           for (uint32_t i = 0; i < msg.reject_count; ++i) {
-            const LogonStateReject& lsr = *reinterpret_cast<const LogonStateReject*>(socketRecvBuf_.data() + offset);
+            const auto& lsr = *reinterpret_cast<const LogonStateReject*>(data + offset);
             offset += sizeof(lsr);
 
             OdysseyRejectData r;
@@ -1429,7 +1434,7 @@ private:
         break;
       }
       case MsgType::ExecReport: {
-        const ExecReportMsg& msg = reinterpret_cast<const NetMsg<ExecReportMsg>*>(socketRecvBuf_.data())->payload;
+        const auto& msg = reinterpret_cast<const NetMsg<ExecReportMsg>*>(data)->payload;
         if (length >= sizeof(msg)) {
 
           std::string id = msg.cl_ord_id;
@@ -1509,7 +1514,7 @@ private:
         break;
       }
       case MsgType::CancelReject: {
-        const CancelRejectMsg& msg = reinterpret_cast<const NetMsg<CancelRejectMsg>*>(socketRecvBuf_.data())->payload;
+        const auto& msg = reinterpret_cast<const NetMsg<CancelRejectMsg>*>(data)->payload;
         if (length >= sizeof(msg)) {
 
           OdysseyRejectData r;
@@ -1525,7 +1530,7 @@ private:
         break;
       }
       case MsgType::MDUpdate: {
-        const MDUpdateMsg& msg = reinterpret_cast<const NetMsg<MDUpdateMsg>*>(socketRecvBuf_.data())->payload;
+        const auto& msg = reinterpret_cast<const NetMsg<MDUpdateMsg>*>(data)->payload;
         if (length >= sizeof(msg)) {
 
           std::string sym = msg.symbol;
@@ -1570,9 +1575,12 @@ private:
         break;
       }
 
-      socketRecvBuf_.erase(socketRecvBuf_.begin(),
-                           socketRecvBuf_.begin() + length);
+      data += length;
+      remaining_size -= length;
     }
+
+    socketRecvBuf_.erase(socketRecvBuf_.begin(),
+                         socketRecvBuf_.begin() + (size - remaining_size));
   }
 
   void updateStatusBar() {
