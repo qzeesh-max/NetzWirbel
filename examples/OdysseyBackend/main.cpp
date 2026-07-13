@@ -15,6 +15,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <cstdint>
+#include <limits>
 #ifdef _WIN32
 #define NOMINMAX
 #include <winsock2.h>
@@ -51,6 +53,11 @@ using ssize_t = int;
 #include "../OdysseyTrader/Protocol.h"
 #include "../OdysseyTrader/OverAlignedAllocator.hpp"
 #include "OrderMatcher.h"
+#include <random>
+
+std::random_device g_rd;
+std::mt19937_64 g_rng(g_rd()); // Mersenne Twister
+std::uniform_int_distribution<uint64_t> g_dist(0, std::numeric_limits<uint64_t>::max()); 
 
 // Non-blocking socket helper
 bool set_nonblocking(int fd) {
@@ -109,9 +116,9 @@ OrderMatcher g_matcher;
 std::vector<std::shared_ptr<ClientConnection>> g_clients;
 
 std::string generateOrderId() {
-    unsigned long a = lrand48() & 0xFFFF;
-    unsigned long b = lrand48() & 0xFFFF;
-    unsigned long c = lrand48() & 0xFFFF;
+    unsigned long a = g_dist(g_rng) & 0xFFFF;
+    unsigned long b = g_dist(g_rng) & 0xFFFF;
+    unsigned long c = g_dist(g_rng) & 0xFFFF;
     char buf[64];
     snprintf(buf, sizeof(buf), "%04lx-%04lx-%04lx", a, b, c);
     return std::string(buf);
@@ -591,7 +598,6 @@ void handle_client_data(const std::shared_ptr<ClientConnection>& client) {
 }
 
 int main(int argc, char** argv) {
-    srand48(time(NULL));
     prepopulate();
 
 #ifdef _WIN32
