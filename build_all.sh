@@ -1,6 +1,18 @@
 #!/bin/bash
 set -e
 
+
+cd $(dirname $0)
+
+
+./install_prerequisites.sh
+
+# make sure express is installed
+( 
+	npm init -y
+	npm install express
+)
+
 echo "Building examples..."
 # Ensure the project is built before running orchestrator
 emcmake cmake -S . -B build || (

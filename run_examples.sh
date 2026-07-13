@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+./install_prerequisites.sh
+
 echo "Building examples..."
 # Ensure the project is built before running orchestrator
 emcmake cmake -S . -B build || (

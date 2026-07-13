@@ -17,8 +17,17 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "NetzWirbel is a C++ web application framework using WebAssembly via Emscripten.",
   "dependencies": {
-    "express": "^5.2.1"
-  }
+    "express": "^5.2.1",
+    "ws": "^8.21.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qzeesh-max/NetzWirbel.git"
+  },
+  "bugs": {
+    "url": "https://github.com/qzeesh-max/NetzWirbel/issues"
+  },
+  "homepage": "https://github.com/qzeesh-max/NetzWirbel#readme"
 }
