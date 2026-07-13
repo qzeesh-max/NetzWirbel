@@ -29,5 +29,6 @@
   "bugs": {
     "url": "https://github.com/qzeesh-max/NetzWirbel/issues"
   },
-  "homepage": "https://github.com/qzeesh-max/NetzWirbel#readme"
+  "homepage": "https://github.com/qzeesh-max/NetzWirbel#readme",
+  "type": "commonjs"
 }

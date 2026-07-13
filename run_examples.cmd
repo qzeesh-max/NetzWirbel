@@ -1,4 +1,5 @@
 @echo off
+call .\install_prerequisites.cmd
 echo Building examples...
 :: Ensure the project is built before running orchestrator
 call emcmake cmake -S . -B build

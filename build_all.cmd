@@ -1,4 +1,4 @@
-@echo off
+i@echo off
 setlocal enabledelayedexpansion
 
 echo ========================================================
@@ -7,6 +7,8 @@ echo ========================================================
 echo This script will build all native backends using MSVC
 echo and all web frontends using Emscripten.
 echo.
+
+call .\install_prerequisites.cmd
 
 echo [1/3] Building OrderMatchBackend...
 call .\build_ordermatch.cmd
