@@ -492,8 +492,8 @@ private:
         if (col_idx == 0) return a.symbol < b.symbol;
         if (col_idx == 1) return a.bidSz < b.bidSz;
         if (col_idx == 2) return a.bidPx < b.bidPx;
-        if (col_idx == 3) return a.askSz < b.askSz;
-        if (col_idx == 4) return a.askPx < b.askPx;
+        if (col_idx == 3) return a.askPx < b.askPx;
+        if (col_idx == 4) return a.askSz < b.askSz;
         if (col_idx == 5) return a.lastSz < b.lastSz;
         if (col_idx == 6) return a.lastPx < b.lastPx;
         if (col_idx == 7) return a.volume < b.volume;
