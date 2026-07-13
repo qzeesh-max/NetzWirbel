@@ -477,8 +477,7 @@ void handle_cancel_order(const std::shared_ptr<ClientConnection>& client, const 
         }
 
         target.cancel();
-        g_matcher.erase(target);
- 
+
 
         // Update global database
         auto &user_orders = g_orders[client->username];
@@ -501,6 +500,9 @@ void handle_cancel_order(const std::shared_ptr<ClientConnection>& client, const 
         msg.payload.cum_qty = target.getExecutedQuantity();
         msg.payload.leaves_qty = 0;
         strncpy_safe(msg.payload.text, "Order canceled", sizeof(msg.payload.text));
+
+	g_matcher.erase(target);
+ 
         send_buffer(client->fd, &msg, sizeof(msg));
 
         // Re-broadcast BBO
