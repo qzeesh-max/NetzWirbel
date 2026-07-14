@@ -22,7 +22,7 @@
 namespace NetzWirbel {
 
 TextArea::TextArea(Context* ctx) : Element(ctx, ctx->strings.textarea) {
-    set_attribute(ctx_->strings.style, "padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; outline: none; font-family: inherit; font-size: 13px; resize: vertical; min-height: 60px;");
+    set_attribute(ctx_->strings.style, "padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; outline: none; font-family: inherit; font-size: 13px; resize: vertical; min-height: 60px; user-select: text;");
 
     add_event_listener(ctx_->register_string("input"), [this](const Event& e) {
         if (on_change_) {

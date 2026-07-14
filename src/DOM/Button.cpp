@@ -88,7 +88,7 @@ void Button::apply_layout() {
        << "color: " << text_color_ << "; "
        << "border: 1px solid rgba(0,0,0,0.2); "
        << "font-family: inherit; font-size: 13px; font-weight: 500; "
-       << "transition: transform 0.05s ease, box-shadow 0.05s ease; ";
+       << "transition: transform 0.05s ease, box-shadow 0.05s ease; user-select: none; ";
 
     if (is_active_) {
         ss << "transform: scale(0.95); box-shadow: inset 0px 2px 4px rgba(0,0,0,0.2); ";

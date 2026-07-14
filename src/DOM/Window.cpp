@@ -153,7 +153,7 @@ Window::Window(Context* ctx, const std::string& id, const std::string& title, in
     header_->set_attribute(ctx_->strings.style, 
         "display: flex; align-items: center; justify-content: space-between; "
         "padding: 0 0 0 12px; background: rgba(0,0,0,0.05); border-bottom: 1px solid rgba(0,0,0,0.1); "
-        "cursor: move; height: 32px;"
+        "cursor: move; height: 32px; user-select: none;"
     );
     append_child(header_);
 
@@ -163,7 +163,7 @@ Window::Window(Context* ctx, const std::string& id, const std::string& title, in
     title_el_->set_text_content(ctx_->register_string(title));
     title_el_->set_attribute(ctx_->strings.style, 
         "font-weight: bold; color: #333; font-size: 14px; "
-        "white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; margin-right: 8px;"
+        "white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; margin-right: 8px; user-select: none;"
     );
     header_->append_child(title_el_);
 
@@ -224,14 +224,14 @@ Window::Window(Context* ctx, const std::string& id, const std::string& title, in
 
     // Add Resize Handles (8 directions)
     const std::vector<std::pair<int, std::string>> handles = {
-        {1, "top: -4px; left: 8px; right: 8px; height: 8px; cursor: n-resize;"},
-        {2, "bottom: -4px; left: 8px; right: 8px; height: 8px; cursor: s-resize;"},
-        {3, "top: 8px; bottom: 8px; right: -4px; width: 8px; cursor: e-resize;"},
-        {4, "top: 8px; bottom: 8px; left: -4px; width: 8px; cursor: w-resize;"},
-        {5, "top: -4px; right: -4px; width: 12px; height: 12px; cursor: ne-resize; z-index: 2;"},
-        {6, "top: -4px; left: -4px; width: 12px; height: 12px; cursor: nw-resize; z-index: 2;"},
-        {7, "bottom: -4px; right: -4px; width: 12px; height: 12px; cursor: se-resize; z-index: 2;"},
-        {8, "bottom: -4px; left: -4px; width: 12px; height: 12px; cursor: sw-resize; z-index: 2;"}
+        {1, "top: -4px; left: 8px; right: 8px; height: 8px; cursor: n-resize; user-select: none;"},
+        {2, "bottom: -4px; left: 8px; right: 8px; height: 8px; cursor: s-resize; user-select: none;"},
+        {3, "top: 8px; bottom: 8px; right: -4px; width: 8px; cursor: e-resize; user-select: none;"},
+        {4, "top: 8px; bottom: 8px; left: -4px; width: 8px; cursor: w-resize; user-select: none;"},
+        {5, "top: -4px; right: -4px; width: 12px; height: 12px; cursor: ne-resize; z-index: 2; user-select: none;"},
+        {6, "top: -4px; left: -4px; width: 12px; height: 12px; cursor: nw-resize; z-index: 2; user-select: none;"},
+        {7, "bottom: -4px; right: -4px; width: 12px; height: 12px; cursor: se-resize; z-index: 2; user-select: none;"},
+        {8, "bottom: -4px; left: -4px; width: 12px; height: 12px; cursor: sw-resize; z-index: 2; user-select: none;"}
     };
 
     for (const auto& h : handles) {

@@ -20,7 +20,7 @@
   "description": "NetzWirbel is a C++ web application framework using WebAssembly via Emscripten.",
   "dependencies": {
     "express": "^5.2.1",
-    "ws": "^8.21.0"
+    "ws": "^8.21.1"
   },
   "repository": {
     "type": "git",

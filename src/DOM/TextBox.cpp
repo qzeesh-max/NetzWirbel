@@ -23,7 +23,7 @@ namespace NetzWirbel {
 
 TextBox::TextBox(Context* ctx) : HTMLInputElement(ctx) {
     set_attribute(ctx_->strings.type, "text");
-    set_attribute(ctx_->strings.style, "padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; outline: none; font-family: inherit; font-size: 13px;");
+    set_attribute(ctx_->strings.style, "padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; outline: none; font-family: inherit; font-size: 13px; user-select: text;");
 
     add_event_listener(ctx_->register_string("input"), [this](const Event& e) {
         if (on_change_) {

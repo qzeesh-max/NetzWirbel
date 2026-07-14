@@ -27,17 +27,17 @@ namespace NetzWirbel {
 Spinner::Spinner(Context* ctx, double initial_value, double step, int precision)
     : HTMLDivElement(ctx), value_(initial_value), step_(step), precision_(precision) {
     
-    set_attribute(ctx_->strings.style, "display: inline-flex; align-items: center; border: 1px solid #ccc; border-radius: 4px; overflow: hidden; background: white;");
+    set_attribute(ctx_->strings.style, "display: inline-flex; align-items: center; border: 1px solid #ccc; border-radius: 4px; overflow: hidden; background: white; user-select: none;");
 
     btn_minus_ = std::make_shared<Button>(ctx_);
     ctx_->register_element(btn_minus_);
     btn_minus_->set_icon("-");
-    btn_minus_->set_attribute(ctx_->strings.style, "border: none; border-radius: 0; border-right: 1px solid #ccc; padding: 4px 8px; cursor: pointer; background: #f9f9f9;");
+    btn_minus_->set_attribute(ctx_->strings.style, "border: none; border-radius: 0; border-right: 1px solid #ccc; padding: 4px 8px; cursor: pointer; background: #f9f9f9; user-select: none;");
     append_child(btn_minus_);
 
     display_container_ = std::make_shared<HTMLDivElement>(ctx_);
     ctx_->register_element(display_container_);
-    display_container_->set_attribute(ctx_->strings.style, "padding: 4px 12px; min-width: 50px; text-align: center; cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center;");
+    display_container_->set_attribute(ctx_->strings.style, "padding: 4px 12px; min-width: 50px; text-align: center; cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; user-select: none;");
     append_child(display_container_);
 
     display_text_ = std::make_shared<Element>(ctx_, ctx_->register_string("span"));
@@ -47,13 +47,13 @@ Spinner::Spinner(Context* ctx, double initial_value, double step, int precision)
     edit_input_ = std::make_shared<HTMLInputElement>(ctx_);
     ctx_->register_element(edit_input_);
     edit_input_->set_attribute(ctx_->strings.type, "number");
-    edit_input_->set_attribute(ctx_->strings.style, "display: none; position: absolute; left: 0; top: 0; width: 100%; height: 100%; box-sizing: border-box; text-align: center; border: none; outline: none;");
+    edit_input_->set_attribute(ctx_->strings.style, "display: none; position: absolute; left: 0; top: 0; width: 100%; height: 100%; box-sizing: border-box; text-align: center; border: none; outline: none; user-select: auto;");
     display_container_->append_child(edit_input_);
 
     btn_plus_ = std::make_shared<Button>(ctx_);
     ctx_->register_element(btn_plus_);
     btn_plus_->set_icon("+");
-    btn_plus_->set_attribute(ctx_->strings.style, "border: none; border-radius: 0; border-left: 1px solid #ccc; padding: 4px 8px; cursor: pointer; background: #f9f9f9;");
+    btn_plus_->set_attribute(ctx_->strings.style, "border: none; border-radius: 0; border-left: 1px solid #ccc; padding: 4px 8px; cursor: pointer; background: #f9f9f9; user-select: none;");
     append_child(btn_plus_);
 
     update_display();
@@ -71,7 +71,7 @@ Spinner::Spinner(Context* ctx, double initial_value, double step, int precision)
     display_container_->add_event_listener(ctx_->register_string("dblclick"), [this](const Event& e) {
         is_editing_ = true;
         display_text_->set_attribute(ctx_->strings.style, "display: none;");
-        edit_input_->set_attribute(ctx_->strings.style, "display: block; position: absolute; left: 0; top: 0; width: 100%; height: 100%; box-sizing: border-box; text-align: center; border: none; outline: none;");
+        edit_input_->set_attribute(ctx_->strings.style, "display: block; position: absolute; left: 0; top: 0; width: 100%; height: 100%; box-sizing: border-box; text-align: center; border: none; outline: none; user-select: auto;");
         std::stringstream ss;
         if (precision_ == 0) ss << (long long)value_;
         else ss << std::fixed << std::setprecision(precision_) << value_;

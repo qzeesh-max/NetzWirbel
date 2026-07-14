@@ -22,7 +22,7 @@ namespace NetzWirbel {
 
 RichTextArea::RichTextArea(Context* ctx) : HTMLDivElement(ctx) {
     set_attribute(ctx_->register_string("contenteditable"), "true");
-    set_attribute(ctx_->strings.style, "padding: 8px; border: 1px solid #ccc; border-radius: 4px; outline: none; min-height: 80px; overflow-y: auto; background: white;");
+    set_attribute(ctx_->strings.style, "padding: 8px; border: 1px solid #ccc; border-radius: 4px; outline: none; min-height: 80px; overflow-y: auto; background: white; user-select: text;");
 }
 
 void RichTextArea::set_html(const std::string& html) {

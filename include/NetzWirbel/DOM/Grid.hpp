@@ -64,7 +64,7 @@ public:
         cell->set_text_content(ctx_->register_string(text));
         
         std::stringstream ss;
-        ss << "padding: 6px; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; ";
+        ss << "padding: 6px; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; user-select: none; ";
         if (width_px > 0) ss << "width: " << width_px << "px; min-width: " << width_px << "px; max-width: " << width_px << "px;";
         else ss << "flex: 1;";
         
@@ -193,7 +193,7 @@ public:
                         auto cell = row->get_cell(resizing_col_);
                         if (cell) {
                             std::stringstream css;
-                            css << "padding: 6px; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; ";
+                            css << "padding: 6px; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; user-select: none; ";
                             css << "width: " << new_w << "px; min-width: " << new_w << "px; max-width: " << new_w << "px;";
                             cell->set_attribute(ctx_->strings.style, css.str());
                         }
@@ -281,7 +281,7 @@ private:
                 auto cell = row->get_cell(resizing_col_);
                 if (cell) {
                     std::stringstream css;
-                    css << "padding: 6px; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; ";
+                    css << "padding: 6px; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; user-select: none; ";
                     css << "width: " << new_w << "px; min-width: " << new_w << "px; max-width: " << new_w << "px;";
                     cell->set_attribute(ctx_->strings.style, css.str());
                 }
