@@ -186,18 +186,20 @@ public:
                     cols_[resizing_col_].current_width = new_w;
                     
                     std::string w_str = std::to_string(new_w) + "px";
-                    std::vector<std::pair<std::string, std::string>> styles = {
+                    cols_[resizing_col_].header_el->set_styles({
                         {"width", w_str},
                         {"min-width", w_str},
                         {"max-width", w_str}
-                    };
-                    
-                    cols_[resizing_col_].header_el->set_styles(styles);
+                    });
                     
                     for (auto& row : rows_) {
                         auto cell = row->get_cell(resizing_col_);
                         if (cell) {
-                            cell->set_styles(styles);
+                            cell->set_styles({
+                                {"width", w_str},
+                                {"min-width", w_str},
+                                {"max-width", w_str}
+                            });
                         }
                     }
                 }

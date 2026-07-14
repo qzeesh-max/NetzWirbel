@@ -32,7 +32,7 @@ Issues a `SET_ATTRIBUTE` command. Overloads taking `uint32_t` IDs map to registe
 ```cpp
 void set_style(const std::string& name, const std::string& value);
 void remove_style(const std::string& name);
-void set_styles(const std::vector<std::pair<std::string, std::string>>& styles);
+void set_styles(std::initializer_list<std::pair<std::string, std::string>> styles);
 ```
 Issues a highly efficient `SET_STYLES` command. Mutates only the specified CSS properties without rewriting or touching the entire `style` string attribute, preventing conflicts with other styles. Passing an empty string value via `set_style`, or using `remove_style`, will remove the CSS property from the element.
 

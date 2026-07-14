@@ -132,7 +132,7 @@ void Element::remove_style(const std::string& name) {
     ctx_->send_command(cmd);
 }
 
-void Element::set_styles(const std::vector<std::pair<std::string, std::string>>& styles) {
+void Element::set_styles(std::initializer_list<std::pair<std::string, std::string>> styles) {
     std::string css;
     for (const auto& pair : styles) {
         css += pair.first + ":" + pair.second + ";";
