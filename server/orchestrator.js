@@ -189,6 +189,16 @@ app.get('/proxy-image', (req, res) => {
     const imageUrl = req.query.url;
     if (!imageUrl) return res.status(400).send('Missing url parameter');
     
+    try {
+        const parsedUrl = new URL(imageUrl);
+        const allowedDomains = ['deckofcardsapi.com'];
+        if (!allowedDomains.includes(parsedUrl.hostname)) {
+            return res.status(403).send('Forbidden: Domain not allowed');
+        }
+    } catch (e) {
+        return res.status(400).send('Invalid URL');
+    }
+    
     https.get(imageUrl, (response) => {
         res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
         res.setHeader('Access-Control-Allow-Origin', '*');
