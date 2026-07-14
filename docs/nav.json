@@ -1,0 +1,37 @@
+[
+    {
+        "title": "Introduction",
+        "items": [
+            { "name": "Overview", "path": "README.md" }
+        ]
+    },
+    {
+        "title": "Tutorials",
+        "items": [
+            { "name": "Getting Started", "path": "tutorials/01-getting-started.md" },
+            { "name": "Creating Elements", "path": "tutorials/02-creating-elements.md" },
+            { "name": "Handling Events", "path": "tutorials/03-handling-events.md" },
+            { "name": "Market Data Example", "path": "tutorials/04-market-data.md" }
+        ]
+    },
+    {
+        "title": "C++ API Reference",
+        "items": [
+            { "name": "Context", "path": "api-cpp/Context.md" },
+            { "name": "Element", "path": "api-cpp/Element.md" },
+            { "name": "Elements (Derived)", "path": "api-cpp/Elements.md" },
+            { "name": "Event", "path": "api-cpp/Event.md" },
+            { "name": "Command", "path": "api-cpp/Command.md" },
+            { "name": "RingBuffer", "path": "api-cpp/RingBuffer.md" },
+            { "name": "Network", "path": "api-cpp/Network.md" },
+            { "name": "UI Components", "path": "api-cpp/Components.md" }
+        ]
+    },
+    {
+        "title": "JavaScript API Reference",
+        "items": [
+            { "name": "NetzWirbelBridge", "path": "api-js/NetzWirbelBridge.md" },
+            { "name": "RingBuffers", "path": "api-js/RingBuffers.md" }
+        ]
+    }
+]
