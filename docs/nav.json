@@ -24,6 +24,7 @@
             { "name": "Command", "path": "api-cpp/Command.md" },
             { "name": "RingBuffer", "path": "api-cpp/RingBuffer.md" },
             { "name": "Network", "path": "api-cpp/Network.md" },
+            { "name": "App", "path": "api-cpp/App.md" },
             { "name": "UI Components", "path": "api-cpp/Components.md" }
         ]
     },
