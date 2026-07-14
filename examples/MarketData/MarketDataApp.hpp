@@ -60,6 +60,24 @@ public:
         g_grid->set_attribute(ctx_->strings.style, "flex: 1; overflow-y: auto; overflow-x: auto; background-color: #121212; color: #e0e0e0;");
         g_app->append_child(g_grid);
 
+        auto style_el = std::make_shared<Element>(ctx, ctx->register_string("style"));
+        ctx->register_element(style_el);
+        style_el->set_text_content(R"(
+            .md-cell {
+                height: 35px;
+                border-right: 1px solid #333;
+                border-bottom: 1px solid #333;
+                display: flex;
+                align-items: center;
+                color: #e0e0e0;
+            }
+            .md-row-even .md-cell { background-color: #1e1e1e; }
+            .md-row-odd .md-cell { background-color: #252525; }
+            .md-up { color: #00ff00 !important; }
+            .md-down { color: #ff4444 !important; }
+        )");
+        g_app->append_child(style_el);
+
         g_grid->add_column("Symbol", 100);
         g_grid->add_column("Bid Size", 100);
         g_grid->add_column("Bid Price", 100);
@@ -77,7 +95,8 @@ public:
             row->add_cell(format_price(data.last_px), 100, "Last Price");
             row->add_cell(std::to_string(data.total_vol), 150, "Total Vol");
 
-            std::string row_bg = (row->seq_ % 2 == 0) ? "#1e1e1e" : "#252525";
+            std::string row_class = (row->seq_ % 2 == 0) ? "md-row-even" : "md-row-odd";
+            row->set_attribute("class", row_class);
             int widths[] = {100, 100, 100, 100, 100, 100, 150};
             
             for (int i = 0; i < 7; ++i) {
@@ -86,8 +105,8 @@ public:
                     std::stringstream ss;
                     ss << "padding: 6px; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; user-select: none; ";
                     ss << "width: " << widths[i] << "px; min-width: " << widths[i] << "px; max-width: " << widths[i] << "px;";
-                    ss << " height: 35px; border-right: 1px solid #333; border-bottom: 1px solid #333; display: flex; align-items: center; background-color: " << row_bg << "; color: #e0e0e0;";
                     cell->set_attribute(ctx_->strings.style, ss.str());
+                    cell->set_attribute("class", "md-cell");
                 }
             }
         });
@@ -186,14 +205,13 @@ private:
                                 row_ptr->get_cell(5)->set_text_content(parts[1]);
                                 row_ptr->get_cell(6)->set_text_content(parts[6]);
 
-                                std::string row_bg = (row_ptr->seq_ % 2 == 0) ? "#1e1e1e" : "#252525";
-                                std::string color = (tr.last_px >= old_last) ? "#00ff00" : "#ff4444";
+                                std::string color_class = (tr.last_px >= old_last) ? "md-cell md-up" : "md-cell md-down";
+                                row_ptr->get_cell(5)->set_attribute("class", color_class);
                                 
                                 int col_width = g_grid->get_col_width(5);
                                 std::stringstream css;
                                 css << "padding: 6px; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; user-select: none; ";
                                 css << "width: " << col_width << "px; min-width: " << col_width << "px; max-width: " << col_width << "px;";
-                                css << " height: 35px; border-right: 1px solid #333; border-bottom: 1px solid #333; display: flex; align-items: center; background-color: " << row_bg << "; color: " << color << "; transition: color 0.2s;";
                                 
                                 row_ptr->get_cell(5)->set_attribute(ctx_->strings.style, css.str());
                             }
