@@ -278,13 +278,17 @@ void Window::apply_styles() {
            << "border: none; z-index: " << (is_modal_ ? z_index_ + 10000 : z_index_) << "; display: " << (visible_ && !minimized_ ? "flex" : "none") << "; "
            << "flex-direction: column;";
     } else {
+        bool is_active = (z_index_ == global_z_index_ - 1);
+        std::string border_style = is_active ? "1px solid rgba(135, 206, 250, 0.8)" : "1px solid rgba(255,255,255,0.4)";
+        std::string box_shadow = is_active ? "0 8px 32px 0 rgba(31, 38, 135, 0.25)" : "0 8px 32px 0 rgba(31, 38, 135, 0.15)";
+        
         ss << "position: absolute; "
            << "left: " << x_ << "px; top: " << y_ << "px; "
            << "width: " << width_ << "px; height: " << height_ << "px; "
            << "background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); "
            << "-webkit-backdrop-filter: blur(10px); border-radius: 12px; "
-           << "border: 1px solid rgba(255,255,255,0.4); "
-           << "box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15); "
+           << "border: " << border_style << "; "
+           << "box-shadow: " << box_shadow << "; "
            << "display: " << (visible_ && !minimized_ ? "flex" : "none") << "; "
            << "flex-direction: column; "
            << "z-index: " << (is_modal_ ? z_index_ + 10000 : z_index_) << "; ";
@@ -359,8 +363,20 @@ void Window::update_button_container_visibility() {
 }
 
 void Window::bring_to_front() {
+    Window* previously_active = nullptr;
+    for (auto* w : WindowManager::active_windows_) {
+        if (w->z_index_ == global_z_index_ - 1) {
+            previously_active = w;
+            break;
+        }
+    }
+    
     z_index_ = global_z_index_++;
     apply_styles();
+    
+    if (previously_active && previously_active != this) {
+        previously_active->apply_styles();
+    }
 }
 
 } // namespace NetzWirbel
