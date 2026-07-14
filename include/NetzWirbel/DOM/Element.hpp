@@ -35,6 +35,9 @@ public:
 
     uint32_t get_id() const { return id_; }
     const std::string& get_tag_name() const { return tag_name_; }
+    
+    Element* get_parent() const { return parent_; }
+    void set_parent(Element* parent) { parent_ = parent; }
 
     void set_attribute(const std::string& key, const std::string& value);
     void set_attribute(uint32_t key_id, const std::string& value);
@@ -53,7 +56,8 @@ public:
     void set_text_content(const std::string& text);
     void set_text_content(uint32_t text_id);
 
-    void append_child(std::shared_ptr<Element> child);
+    virtual void append_child(std::shared_ptr<Element> child);
+    virtual void remove_child(std::shared_ptr<Element> child);
 
     void focus();
     void select();
@@ -73,6 +77,7 @@ protected:
     std::string tag_name_;
     std::unordered_map<std::string, std::vector<std::function<void(const Event&)>>> event_listeners_;
     std::vector<std::shared_ptr<Element>> children_;
+    Element* parent_ = nullptr;
 
 private:
     static uint32_t next_id_;

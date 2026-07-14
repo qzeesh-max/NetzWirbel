@@ -106,6 +106,24 @@ class NetzWirbelBridge {
         this.elements = new Map();
         this.stringRegistry = new Map();
         this.eventBacklog = [];
+
+        // Apply global styles for the UI framework
+        if (!document.getElementById("netzwirbel-global-style")) {
+            const style = document.createElement("style");
+            style.id = "netzwirbel-global-style";
+            style.innerHTML = `
+                body {
+                    user-select: none;
+                    -webkit-user-select: none;
+                    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                }
+                input, textarea, [contenteditable] {
+                    user-select: text;
+                    -webkit-user-select: text;
+                }
+            `;
+            document.head.appendChild(style);
+        }
         
         this.CMD = {
             CREATE_ELEMENT: 1,

@@ -209,6 +209,10 @@ Window::Window(Context* ctx, const std::string& id, const std::string& title, in
     );
     append_child(content_container_);
 
+    content_container_->add_event_listener(ctx_->register_string("mousedown"), [this](const Event& e) {
+        bring_to_front();
+    });
+
     header_->add_event_listener(ctx_->register_string("mousedown"), [this](const Event& e) {
         if (auto* me = dynamic_cast<const MouseEvent*>(&e)) {
             if (maximized_) return;
@@ -294,18 +298,10 @@ void Window::set_bounds(int x, int y, int width, int height) {
     width_ = width;
     height_ = height;
     apply_styles();
-    
-    this->add_event_listener("mousedown", [this](const Event&) {
-        bring_to_front();
-    });
 }
 void Window::set_visible(bool visible) {
     visible_ = visible;
     apply_styles();
-    
-    this->add_event_listener("mousedown", [this](const Event&) {
-        bring_to_front();
-    });
 }
 
 void Window::set_minimized(bool minimized) {
@@ -365,10 +361,6 @@ void Window::update_button_container_visibility() {
 void Window::bring_to_front() {
     z_index_ = global_z_index_++;
     apply_styles();
-    
-    this->add_event_listener("mousedown", [this](const Event&) {
-        bring_to_front();
-    });
 }
 
 } // namespace NetzWirbel

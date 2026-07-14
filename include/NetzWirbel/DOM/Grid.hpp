@@ -48,7 +48,7 @@ template <typename T>
 class GridRow : public HTMLDivElement {
 public:
     GridRow(Context* ctx) : HTMLDivElement(ctx) {
-        set_attribute(ctx_->strings.style, "display: flex; border-bottom: 1px solid rgba(0,0,0,0.05); width: 100%;");
+        set_attribute(ctx_->strings.style, "display: flex; border-bottom: 1px solid rgba(0,0,0,0.05); width: 100%; user-select: none;");
     }
     
     void update_data(const T& data) {

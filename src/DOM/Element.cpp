@@ -222,6 +222,7 @@ void Element::set_text_content(uint32_t text_id) {
 
 void Element::append_child(std::shared_ptr<Element> child) {
     children_.push_back(child);
+    child->set_parent(this);
 
     Command cmd;
     cmd.type = CommandType::APPEND_CHILD;
@@ -229,6 +230,14 @@ void Element::append_child(std::shared_ptr<Element> child) {
     cmd.arg1 = child->get_id();
 
     ctx_->send_command(cmd);
+}
+
+void Element::remove_child(std::shared_ptr<Element> child) {
+    auto it = std::find(children_.begin(), children_.end(), child);
+    if (it != children_.end()) {
+        children_.erase(it);
+        child->set_parent(nullptr);
+    }
 }
 
 void Element::focus() {
@@ -288,6 +297,10 @@ void Element::handle_event(const Event& event) {
         for (const auto& listener : it->second) {
             listener(event);
         }
+    }
+    
+    if (parent_) {
+        parent_->handle_event(event);
     }
 }
 
