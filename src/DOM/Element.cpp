@@ -102,6 +102,55 @@ void Element::set_attribute(uint32_t key_id, uint32_t value_id) {
     ctx_->send_command(cmd);
 }
 
+void Element::set_style(const std::string& name, const std::string& value) {
+    std::string css = name + ":" + value + ";";
+    char* css_ptr = new char[css.size() + 1];
+    std::strcpy(css_ptr, css.c_str());
+
+    Command cmd;
+    cmd.type = CommandType::SET_STYLES;
+    cmd.target_id = id_;
+    cmd.arg1 = reinterpret_cast<uint32_t>(css_ptr);
+    cmd.arg2 = static_cast<uint32_t>(css.size());
+    cmd.arg3 = 0;
+    cmd.arg4 = 0;
+    ctx_->send_command(cmd);
+}
+
+void Element::remove_style(const std::string& name) {
+    std::string css = name + ":;";
+    char* css_ptr = new char[css.size() + 1];
+    std::strcpy(css_ptr, css.c_str());
+
+    Command cmd;
+    cmd.type = CommandType::SET_STYLES;
+    cmd.target_id = id_;
+    cmd.arg1 = reinterpret_cast<uint32_t>(css_ptr);
+    cmd.arg2 = static_cast<uint32_t>(css.size());
+    cmd.arg3 = 0;
+    cmd.arg4 = 0;
+    ctx_->send_command(cmd);
+}
+
+void Element::set_styles(const std::vector<std::pair<std::string, std::string>>& styles) {
+    std::string css;
+    for (const auto& pair : styles) {
+        css += pair.first + ":" + pair.second + ";";
+    }
+    
+    char* css_ptr = new char[css.size() + 1];
+    std::strcpy(css_ptr, css.c_str());
+
+    Command cmd;
+    cmd.type = CommandType::SET_STYLES;
+    cmd.target_id = id_;
+    cmd.arg1 = reinterpret_cast<uint32_t>(css_ptr);
+    cmd.arg2 = static_cast<uint32_t>(css.size());
+    cmd.arg3 = 0;
+    cmd.arg4 = 0;
+    ctx_->send_command(cmd);
+}
+
 void Element::set_property(const std::string& key, const std::string& value) {
     char* key_ptr = new char[key.size() + 1];
     std::strcpy(key_ptr, key.c_str());

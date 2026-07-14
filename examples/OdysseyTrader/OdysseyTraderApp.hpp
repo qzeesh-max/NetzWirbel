@@ -410,14 +410,14 @@ private:
                 double v = std::stod(str, &idx);
                 if (idx == str.length() && v >= 0) {
                     on_change(v);
-                    input->set_attribute(ctx_->strings.style, "padding: 4px; border: 1px solid #ccc; border-radius: 4px; width: 80px; text-align: right; box-sizing: border-box;");
+                    input->set_style("border-color", "#ccc");
                 } else {
                     show_alert("Invalid value entered for preference.");
-                    input->set_attribute(ctx_->strings.style, "padding: 4px; border: 1px solid red; border-radius: 4px; width: 80px; text-align: right; box-sizing: border-box;");
+                    input->set_style("border-color", "red");
                 }
             } catch (...) {
                 show_alert("Invalid value entered for preference.");
-                input->set_attribute(ctx_->strings.style, "padding: 4px; border: 1px solid red; border-radius: 4px; width: 80px; text-align: right; box-sizing: border-box;");
+                input->set_style("border-color", "red");
             }
         };
 

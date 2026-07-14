@@ -43,6 +43,10 @@ public:
     void set_attribute(uint32_t key_id, const std::string& value);
     void set_attribute(uint32_t key_id, uint32_t value_id);
 
+    void set_style(const std::string& name, const std::string& value);
+    void remove_style(const std::string& name);
+    void set_styles(const std::vector<std::pair<std::string, std::string>>& styles);
+
     void set_property(const std::string& key, const std::string& value);
     void set_property(uint32_t key_id, const std::string& value);
     void set_property(uint32_t key_id, uint32_t value_id);

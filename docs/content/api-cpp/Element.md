@@ -28,6 +28,14 @@ void set_attribute(uint32_t key_id, uint32_t value_id);
 ```
 Issues a `SET_ATTRIBUTE` command. Overloads taking `uint32_t` IDs map to registered strings in the JS bridge.
 
+### `void set_style(...)`
+```cpp
+void set_style(const std::string& name, const std::string& value);
+void remove_style(const std::string& name);
+void set_styles(const std::vector<std::pair<std::string, std::string>>& styles);
+```
+Issues a highly efficient `SET_STYLES` command. Mutates only the specified CSS properties without rewriting or touching the entire `style` string attribute, preventing conflicts with other styles. Passing an empty string value via `set_style`, or using `remove_style`, will remove the CSS property from the element.
+
 ### `void set_property(...)`
 ```cpp
 void set_property(const std::string& key, const std::string& value);

@@ -34,7 +34,8 @@ enum class CommandType : uint32_t {
     REGISTER_STRING = 11,
     FOCUS = 12,
     SELECT = 13,
-    SET_NUMERIC_ONLY = 14
+    SET_NUMERIC_ONLY = 14,
+    SET_STYLES = 15
 };
 
 // Represents a command from C++ to JS

@@ -56,7 +56,10 @@ void WindowManager::attach(std::shared_ptr<Element> root_container, Context* ctx
             int dy = mev->get_client_y() - w->drag_start_y_;
             w->x_ = w->initial_win_x_ + dx;
             w->y_ = w->initial_win_y_ + dy;
-            w->apply_styles();
+            w->set_styles({
+                {"left", std::to_string(w->x_) + "px"},
+                {"top", std::to_string(w->y_) + "px"}
+            });
         }
 
         if (active_resize_win_ && active_resize_win_->is_resizing_) {
@@ -89,7 +92,12 @@ void WindowManager::attach(std::shared_ptr<Element> root_container, Context* ctx
             if (nw >= 250) { w->x_ = nx; w->width_ = nw; }
             if (nh >= 150) { w->y_ = ny; w->height_ = nh; }
             
-            w->apply_styles();
+            w->set_styles({
+                {"left", std::to_string(w->x_) + "px"},
+                {"top", std::to_string(w->y_) + "px"},
+                {"width", std::to_string(w->width_) + "px"},
+                {"height", std::to_string(w->height_) + "px"}
+            });
         }
     });
 
@@ -170,6 +178,12 @@ Window::Window(Context* ctx, const std::string& id, const std::string& title, in
     // Button Container
     button_container_ = std::make_shared<HTMLDivElement>(ctx_);
     ctx_->register_element(button_container_);
+    button_container_->set_attribute(ctx_->strings.style, 
+        "display: flex; align-items: center; gap: 4px; padding: 0 8px 0 16px; height: 100%; "
+        "background: linear-gradient(135deg, #f0f0f0 0%, #c0c0c0 50%, #f0f0f0 100%); "
+        "border-top-left-radius: 20px; border-bottom-left-radius: 20px; "
+        "border-left: 1px solid rgba(255,255,255,0.7);"
+    );
     update_button_container_visibility();
     header_->append_child(button_container_);
 
@@ -333,32 +347,27 @@ void Window::set_close_button_enabled(bool enabled) { std::static_pointer_cast<B
 
 void Window::set_minimize_button_hidden(bool hidden) {
     min_hidden_ = hidden;
-    btn_min_->set_attribute(ctx_->strings.style, hidden ? "display: none;" : "");
+    btn_min_->set_style("display", hidden ? "none" : "");
     update_button_container_visibility();
 }
 
 void Window::set_maximize_button_hidden(bool hidden) {
     max_hidden_ = hidden;
-    btn_max_->set_attribute(ctx_->strings.style, hidden ? "display: none;" : "");
+    btn_max_->set_style("display", hidden ? "none" : "");
     update_button_container_visibility();
 }
 
 void Window::set_close_button_hidden(bool hidden) {
     close_hidden_ = hidden;
-    btn_close_->set_attribute(ctx_->strings.style, hidden ? "display: none;" : "");
+    btn_close_->set_style("display", hidden ? "none" : "");
     update_button_container_visibility();
 }
 
 void Window::update_button_container_visibility() {
     if (min_hidden_ && max_hidden_ && close_hidden_) {
-        button_container_->set_attribute(ctx_->strings.style, "display: none;");
+        button_container_->set_style("display", "none");
     } else {
-        button_container_->set_attribute(ctx_->strings.style, 
-            "display: flex; align-items: center; gap: 4px; padding: 0 8px 0 16px; height: 100%; "
-            "background: linear-gradient(135deg, #f0f0f0 0%, #c0c0c0 50%, #f0f0f0 100%); "
-            "border-top-left-radius: 20px; border-bottom-left-radius: 20px; "
-            "border-left: 1px solid rgba(255,255,255,0.7);"
-        );
+        button_container_->set_style("display", "flex");
     }
 }
 
@@ -372,11 +381,25 @@ void Window::bring_to_front() {
     }
     
     z_index_ = global_z_index_++;
-    apply_styles();
+    
+    std::string active_border = "1px solid rgba(135, 206, 250, 0.8)";
+    std::string active_shadow = "0 8px 32px 0 rgba(31, 38, 135, 0.25)";
+    std::string inactive_border = "1px solid rgba(255,255,255,0.4)";
+    std::string inactive_shadow = "0 8px 32px 0 rgba(31, 38, 135, 0.15)";
     
     if (previously_active && previously_active != this) {
-        previously_active->apply_styles();
+        previously_active->set_styles({
+            {"z-index", std::to_string(previously_active->is_modal_ ? previously_active->z_index_ + 10000 : previously_active->z_index_)},
+            {"border", inactive_border},
+            {"box-shadow", inactive_shadow}
+        });
     }
+    
+    this->set_styles({
+        {"z-index", std::to_string(this->is_modal_ ? this->z_index_ + 10000 : this->z_index_)},
+        {"border", active_border},
+        {"box-shadow", active_shadow}
+    });
 }
 
 } // namespace NetzWirbel

@@ -106,7 +106,17 @@ void Button::apply_layout() {
 void Button::set_active(bool active) {
     if (get_disabled()) return;
     is_active_ = active;
-    apply_layout();
+    if (is_active_) {
+        set_styles({
+            {"transform", "scale(0.95)"},
+            {"box-shadow", "inset 0px 2px 4px rgba(0,0,0,0.2)"}
+        });
+    } else {
+        set_styles({
+            {"transform", "scale(1.0)"},
+            {"box-shadow", "0px 2px 4px rgba(0,0,0,0.1)"}
+        });
+    }
 }
 
 } // namespace NetzWirbel

@@ -139,7 +139,8 @@ class NetzWirbelBridge {
             REGISTER_STRING: 11,
             FOCUS: 12,
             SELECT: 13,
-            SET_NUMERIC_ONLY: 14
+            SET_NUMERIC_ONLY: 14,
+            SET_STYLES: 15
         };
         
         this.EVENT = {
@@ -238,6 +239,31 @@ class NetzWirbelBridge {
                 if (el) {
                     const key = this.readString(arg1, arg2);
                     el[key] = numVal;
+                }
+                break;
+            }
+            case this.CMD.SET_STYLES: {
+                const el = this.elements.get(targetId);
+                if (el) {
+                    const cssStr = this.readString(arg1, arg2);
+                    const pairs = cssStr.split(';');
+                    for (let i = 0; i < pairs.length; ++i) {
+                        const pair = pairs[i];
+                        if (!pair) continue;
+                        const idx = pair.indexOf(':');
+                        if (idx > 0) {
+                            const k = pair.substring(0, idx).trim();
+                            const v = pair.substring(idx + 1).trim();
+                            if (v) {
+                                el.style.setProperty(k, v);
+                            } else {
+                                el.style.removeProperty(k);
+                            }
+                        } else {
+                            const k = pair.trim();
+                            if (k) el.style.removeProperty(k);
+                        }
+                    }
                 }
                 break;
             }

@@ -130,7 +130,10 @@ public:
             }
 
             std::string transform = "translate(" + std::to_string(p.x) + "px, " + std::to_string(p.y) + "px) scale(" + std::to_string(p.life) + ")";
-            p.el->set_attribute(ctx_->strings.style, "position: absolute; width: 4px; height: 4px; border-radius: 50%; background-color: #fff; transform: " + transform + "; opacity: " + std::to_string(p.life) + ";");
+            p.el->set_styles({
+                {"transform", transform},
+                {"opacity", std::to_string(p.life)}
+            });
         }
 
         static double last_stats_time = 0;

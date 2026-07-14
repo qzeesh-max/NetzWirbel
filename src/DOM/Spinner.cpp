@@ -70,8 +70,8 @@ Spinner::Spinner(Context* ctx, double initial_value, double step, int precision)
 
     display_container_->add_event_listener(ctx_->register_string("dblclick"), [this](const Event& e) {
         is_editing_ = true;
-        display_text_->set_attribute(ctx_->strings.style, "display: none;");
-        edit_input_->set_attribute(ctx_->strings.style, "display: block; position: absolute; left: 0; top: 0; width: 100%; height: 100%; box-sizing: border-box; text-align: center; border: none; outline: none; user-select: auto;");
+        display_text_->set_style("display", "none");
+        edit_input_->set_style("display", "block");
         std::stringstream ss;
         if (precision_ == 0) ss << (long long)value_;
         else ss << std::fixed << std::setprecision(precision_) << value_;
@@ -86,8 +86,8 @@ Spinner::Spinner(Context* ctx, double initial_value, double step, int precision)
 void Spinner::end_edit() {
     if (!is_editing_) return;
     is_editing_ = false;
-    display_text_->set_attribute(ctx_->strings.style, "display: block;");
-    edit_input_->set_attribute(ctx_->strings.style, "display: none;");
+    display_text_->set_style("display", "block");
+    edit_input_->set_style("display", "none");
     try {
         // We might not easily get value unless updated via Property change messages
         // If getting value isn't supported, we fallback to no-op

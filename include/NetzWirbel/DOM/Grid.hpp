@@ -185,18 +185,19 @@ public:
                     
                     cols_[resizing_col_].current_width = new_w;
                     
-                    std::stringstream ss;
-                    ss << "padding: 6px; box-sizing: border-box; position: relative; user-select: none; ";
-                    ss << "width: " << new_w << "px; min-width: " << new_w << "px; max-width: " << new_w << "px;";
-                    cols_[resizing_col_].header_el->set_attribute(ctx_->strings.style, ss.str());
+                    std::string w_str = std::to_string(new_w) + "px";
+                    std::vector<std::pair<std::string, std::string>> styles = {
+                        {"width", w_str},
+                        {"min-width", w_str},
+                        {"max-width", w_str}
+                    };
+                    
+                    cols_[resizing_col_].header_el->set_styles(styles);
                     
                     for (auto& row : rows_) {
                         auto cell = row->get_cell(resizing_col_);
                         if (cell) {
-                            std::stringstream css;
-                            css << "padding: 6px; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; user-select: none; ";
-                            css << "width: " << new_w << "px; min-width: " << new_w << "px; max-width: " << new_w << "px;";
-                            cell->set_attribute(ctx_->strings.style, css.str());
+                            cell->set_styles(styles);
                         }
                     }
                 }
