@@ -17,6 +17,7 @@
 
 #include "NetzWirbel/App.hpp"
 #include "NetzWirbel/DOM/Elements.hpp"
+#include "NetzWirbel/DOM/Grid.hpp"
 #include "NetzWirbel/Network.hpp"
 #include <iostream>
 #include <memory>
@@ -29,7 +30,7 @@ using namespace NetzWirbel;
 
 struct MarketDataTickerRow {
     std::string symbol;
-    std::shared_ptr<HTMLDivElement> cells[7];
+    std::shared_ptr<GridRow<MarketDataTickerRow>> row_ptr;
     int bid_size = 0;
     double bid_px = 0;
     double ask_px = 0;
@@ -53,17 +54,43 @@ public:
         cmd.arg1 = g_app->get_id();
         ctx->send_command(cmd);
 
-        g_grid_container = std::make_shared<HTMLDivElement>(ctx);
-        ctx->register_element(g_grid_container);
-        g_grid_container->set_attribute(ctx_->strings.style, "flex: 1; overflow-y: auto; overflow-x: auto; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr; align-content: start;");
-        g_app->append_child(g_grid_container);
+        g_grid = std::make_shared<Grid<MarketDataTickerRow>>(ctx);
+        ctx->register_element(g_grid);
+        g_grid->set_sort_enabled(false);
+        g_grid->set_attribute(ctx_->strings.style, "flex: 1; overflow-y: auto; overflow-x: auto; background-color: #121212; color: #e0e0e0;");
+        g_app->append_child(g_grid);
 
-        const char* headers[] = {"Symbol", "Bid Size", "Bid Price", "Ask Price", "Ask Size", "Last Price", "Total Vol"};
-        for (int i = 0; i < 7; ++i) {
-            auto th = create_cell(ctx, headers[i], true);
-            ctx->register_element(th);
-            g_grid_container->append_child(th);
-        }
+        g_grid->add_column("Symbol", 100);
+        g_grid->add_column("Bid Size", 100);
+        g_grid->add_column("Bid Price", 100);
+        g_grid->add_column("Ask Price", 100);
+        g_grid->add_column("Ask Size", 100);
+        g_grid->add_column("Last Price", 100);
+        g_grid->add_column("Total Vol", 150);
+
+        g_grid->set_on_render_row([this](std::shared_ptr<GridRow<MarketDataTickerRow>> row, const MarketDataTickerRow& data) {
+            row->add_cell(data.symbol, 100, "Symbol");
+            row->add_cell(std::to_string(data.bid_size), 100, "Bid Size");
+            row->add_cell(format_price(data.bid_px), 100, "Bid Price");
+            row->add_cell(format_price(data.ask_px), 100, "Ask Price");
+            row->add_cell(std::to_string(data.ask_size), 100, "Ask Size");
+            row->add_cell(format_price(data.last_px), 100, "Last Price");
+            row->add_cell(std::to_string(data.total_vol), 150, "Total Vol");
+
+            std::string row_bg = (row->seq_ % 2 == 0) ? "#1e1e1e" : "#252525";
+            int widths[] = {100, 100, 100, 100, 100, 100, 150};
+            
+            for (int i = 0; i < 7; ++i) {
+                auto cell = row->get_cell(i);
+                if (cell) {
+                    std::stringstream ss;
+                    ss << "padding: 6px; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; user-select: none; ";
+                    ss << "width: " << widths[i] << "px; min-width: " << widths[i] << "px; max-width: " << widths[i] << "px;";
+                    ss << " height: 35px; border-right: 1px solid #333; border-bottom: 1px solid #333; display: flex; align-items: center; background-color: " << row_bg << "; color: #e0e0e0;";
+                    cell->set_attribute(ctx_->strings.style, ss.str());
+                }
+            }
+        });
 
         for (int i = 0; i < 65; ++i) {
             MarketDataTickerRow tr;
@@ -75,17 +102,8 @@ public:
             tr.ask_size = 0;
             tr.total_vol = 0;
             
-            std::string row_bg = (i % 2 == 0) ? "#1e1e1e" : "#252525";
-            std::string base_style = "padding: 0 8px; border-right: 1px solid #333; border-bottom: 1px solid #333; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; box-sizing: border-box; height: 35px; display: flex; align-items: center; background-color: " + row_bg + ";";
-
-            for (int c = 0; c < 7; ++c) {
-                tr.cells[c] = create_cell(ctx, "");
-                tr.cells[c]->set_attribute(ctx_->strings.style, base_style);
-                ctx->register_element(tr.cells[c]);
-                g_grid_container->append_child(tr.cells[c]);
-            }
-            tr.cells[0]->set_text_content(tr.symbol);
-            
+            auto row_ptr = g_grid->add_row(tr);
+            tr.row_ptr = row_ptr;
             g_tickers.push_back(tr);
         }
 
@@ -123,7 +141,7 @@ public:
 private:
     Context* ctx_ = nullptr;
     std::shared_ptr<HTMLDivElement> g_app;
-    std::shared_ptr<HTMLDivElement> g_grid_container;
+    std::shared_ptr<Grid<MarketDataTickerRow>> g_grid;
     std::shared_ptr<HTMLDivElement> g_stats_pane;
     std::shared_ptr<WebSocket> g_ws;
     std::vector<MarketDataTickerRow> g_tickers;
@@ -132,17 +150,6 @@ private:
         std::stringstream ss;
         ss << std::fixed << std::setprecision(2) << p;
         return ss.str();
-    }
-
-    std::shared_ptr<HTMLDivElement> create_cell(Context* ctx, const std::string& text, bool is_header = false) {
-        auto el = std::make_shared<HTMLDivElement>(ctx);
-        el->set_text_content(text);
-        std::string base_style = "padding: 0 8px; border-right: 1px solid #333; border-bottom: 1px solid #333; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; box-sizing: border-box; height: 35px; display: flex; align-items: center;";
-        if (is_header) {
-            base_style += " background-color: #1a1a1a; font-weight: bold; resize: horizontal; border-bottom: 2px solid #444; position: sticky; top: 0; z-index: 10;";
-        }
-        el->set_attribute(ctx_->strings.style, base_style);
-        return el;
     }
 
     void on_market_data(const std::string& msg) {
@@ -170,18 +177,26 @@ private:
                             tr.ask_size = std::stoi(parts[5]);
                             tr.total_vol = std::stoi(parts[6]);
 
-                            tr.cells[1]->set_text_content(parts[4]);
-                            tr.cells[2]->set_text_content(parts[2]);
-                            tr.cells[3]->set_text_content(parts[3]);
-                            tr.cells[4]->set_text_content(parts[5]);
-                            tr.cells[5]->set_text_content(parts[1]);
-                            tr.cells[6]->set_text_content(parts[6]);
+                            auto row_ptr = tr.row_ptr;
+                            if (row_ptr) {
+                                row_ptr->get_cell(1)->set_text_content(parts[4]);
+                                row_ptr->get_cell(2)->set_text_content(parts[2]);
+                                row_ptr->get_cell(3)->set_text_content(parts[3]);
+                                row_ptr->get_cell(4)->set_text_content(parts[5]);
+                                row_ptr->get_cell(5)->set_text_content(parts[1]);
+                                row_ptr->get_cell(6)->set_text_content(parts[6]);
 
-                            std::string row_bg = (i % 2 == 0) ? "#1e1e1e" : "#252525";
-                            std::string color = (tr.last_px >= old_last) ? "#00ff00" : "#ff4444";
-                            std::string cell_style = "padding: 0 8px; border-right: 1px solid #333; border-bottom: 1px solid #333; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; box-sizing: border-box; height: 35px; display: flex; align-items: center; background-color: " + row_bg + "; color: " + color + "; transition: color 0.2s;";
-                            
-                            tr.cells[5]->set_attribute(ctx_->strings.style, cell_style);
+                                std::string row_bg = (row_ptr->seq_ % 2 == 0) ? "#1e1e1e" : "#252525";
+                                std::string color = (tr.last_px >= old_last) ? "#00ff00" : "#ff4444";
+                                
+                                int col_width = g_grid->get_col_width(5);
+                                std::stringstream css;
+                                css << "padding: 6px; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; user-select: none; ";
+                                css << "width: " << col_width << "px; min-width: " << col_width << "px; max-width: " << col_width << "px;";
+                                css << " height: 35px; border-right: 1px solid #333; border-bottom: 1px solid #333; display: flex; align-items: center; background-color: " << row_bg << "; color: " << color << "; transition: color 0.2s;";
+                                
+                                row_ptr->get_cell(5)->set_attribute(ctx_->strings.style, css.str());
+                            }
                             break;
                         }
                     }

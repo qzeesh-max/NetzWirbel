@@ -150,6 +150,7 @@ public:
         
         int col_idx = cols_.size();
         label_cont->add_event_listener(ctx_->strings.click, [this, col_idx](const Event&) {
+            if (!sort_enabled_) return;
             if (resizing_col_ != -1) return;
             if (sort_col_idx_ == col_idx) {
                 if (sort_dir_ == SORT_NONE) sort_dir_ = SORT_ASC;
@@ -309,6 +310,9 @@ public:
     int sort_col_idx_ = -1;
     SortDirection sort_dir_ = SORT_NONE;
     std::function<bool(const T& a, const T& b, int col_idx)> sort_cmp_;
+    bool sort_enabled_ = true;
+
+    void set_sort_enabled(bool enabled) { sort_enabled_ = enabled; }
     
     void apply_sort() {
         for (int i = 0; i < cols_.size(); ++i) {
