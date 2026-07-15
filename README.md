@@ -2,6 +2,9 @@
 
 NetzWirbel is a C++ web application framework using WebAssembly via Emscripten.
 
+- **Online Examples**: [https://www.zeeshan.im/ws/](https://www.zeeshan.im/ws/) *(Excludes BanzaiApplication due to FIX credential requirements)*
+- **Online Documentation**: [https://www.zeeshan.im/ds/](https://www.zeeshan.im/ds/)
+
 ## Prerequisites
 
 To build and run this project, you need the following installed:
