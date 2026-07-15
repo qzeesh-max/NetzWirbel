@@ -83,7 +83,11 @@ public:
         price_ = price;
         quantity_ = quantity;
         openQuantity_ = quantity_ - executedQuantity_;
-        status_ = 0; // '0' = New (or replaced)
+        
+        if (status_ != 1)
+        {
+            status_ = 5; // replace
+        }
     }
 
     void setStatus(uint8_t status) {

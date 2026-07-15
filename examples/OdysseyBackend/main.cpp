@@ -414,8 +414,11 @@ void handle_replace_order(const std::shared_ptr<ClientConnection>& client, const
 
 
         // Update global database
-        if (auto it = g_orders[client->username].find(orig_id); it != g_orders[client->username].end()) {
+        auto &clientOrders = g_orders[client->username];
+        if (auto it = clientOrders.find(orig_id); it != clientOrders.end()) {
             it->second.replace(new_id, req.price, req.qty);
+            clientOrders.emplace(new_id, it->second);
+            clientOrders.erase(it);
         }
 
         // Send ACK
