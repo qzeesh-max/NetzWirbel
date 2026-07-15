@@ -18,3 +18,9 @@ Represents events like `click`, `mousemove`, `mousedown`, `mouseup`.
 
 > [!TIP]
 > If you register a mouse event listener, you can use `static_cast<const NetzWirbel::MouseEvent&>(event)` inside your callback to safely access coordinates.
+
+## `KeyboardEvent` (Derived)
+
+Represents events like `keydown`, `keyup`, `keypress`.
+
+- **`const std::string& get_key() const`**: Returns the key value of the key pressed (e.g., "Enter", "a", "Escape").

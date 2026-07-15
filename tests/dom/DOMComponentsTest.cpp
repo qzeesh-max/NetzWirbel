@@ -158,3 +158,24 @@ TEST_F(DOMComponentsTest, GridBasicFunctionality) {
     
     ctx->unregister_element(grid->get_id());
 }
+
+// --- Window and Document Element Tests ---
+TEST_F(DOMComponentsTest, GlobalElementsAndPreventDefault) {
+    auto win = std::make_shared<WindowElement>(ctx);
+    ctx->register_element(win);
+    
+    auto doc = std::make_shared<DocumentElement>(ctx);
+    ctx->register_element(doc);
+    
+    bool event_handled = false;
+    win->add_event_listener("keydown", [&](const Event& e) {
+        event_handled = true;
+    }, true); // With preventDefault
+    
+    KeyboardEvent ke("keydown", "Enter");
+    win->handle_event(ke);
+    EXPECT_TRUE(event_handled);
+    
+    ctx->unregister_element(win->get_id());
+    ctx->unregister_element(doc->get_id());
+}

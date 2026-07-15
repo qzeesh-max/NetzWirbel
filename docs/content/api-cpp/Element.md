@@ -64,8 +64,8 @@ Appends another Element instance as a child node in the DOM. Issues an `APPEND_C
 
 ### `void add_event_listener(...)`
 ```cpp
-void add_event_listener(const std::string& event_type, std::function<void(const Event&)> callback);
-void add_event_listener(uint32_t event_type_id, std::function<void(const Event&)> callback);
+void add_event_listener(const std::string& event_type, std::function<void(const Event&)> callback, bool prevent_default = false);
+void add_event_listener(uint32_t event_type_id, std::function<void(const Event&)> callback, bool prevent_default = false);
 ```
 Registers an event callback in C++ and issues an `ADD_EVENT_LISTENER` command to JS.
 

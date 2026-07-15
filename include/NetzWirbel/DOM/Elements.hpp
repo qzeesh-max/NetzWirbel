@@ -145,6 +145,16 @@ private:
     std::string src_ = "";
 };
 
+class WindowElement : public Element {
+public:
+    WindowElement(Context* ctx) : Element(ctx, SkipCreate{}) {}
+};
+
+class DocumentElement : public Element {
+public:
+    DocumentElement(Context* ctx) : Element(ctx, SkipCreate{}) {}
+};
+
 } // namespace NetzWirbel
 
 namespace ntzwrbl = NetzWirbel;

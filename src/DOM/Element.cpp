@@ -52,6 +52,10 @@ Element::Element(Context* ctx, uint32_t tag_name_id)
     ctx_->send_command(cmd);
 }
 
+Element::Element(Context* ctx, SkipCreate)
+    : ctx_(ctx), id_(next_id_++), tag_name_("") {
+}
+
 Element::~Element() {
     // The element is either already unregistered from the context,
     // or the context is being destroyed. No need to unregister here.
@@ -303,7 +307,7 @@ void Element::select() {
     ctx_->send_command(cmd);
 }
 
-void Element::add_event_listener(const std::string& event_type, std::function<void(const Event&)> callback) {
+void Element::add_event_listener(const std::string& event_type, std::function<void(const Event&)> callback, bool prevent_default) {
     bool is_first = event_listeners_[event_type].empty();
     event_listeners_[event_type].push_back(std::move(callback));
 
@@ -317,12 +321,13 @@ void Element::add_event_listener(const std::string& event_type, std::function<vo
         cmd.target_id = id_;
         cmd.arg1 = reinterpret_cast<uint32_t>(type_ptr);
         cmd.arg2 = static_cast<uint32_t>(event_type.size());
+        cmd.arg3 = prevent_default ? 1 : 0;
 
         ctx_->send_command(cmd);
     }
 }
 
-void Element::add_event_listener(uint32_t event_type_id, std::function<void(const Event&)> callback) {
+void Element::add_event_listener(uint32_t event_type_id, std::function<void(const Event&)> callback, bool prevent_default) {
     std::string internal_key = ctx_->get_string(event_type_id);
     if (internal_key.empty()) return; // Invalid ID
 
@@ -335,6 +340,7 @@ void Element::add_event_listener(uint32_t event_type_id, std::function<void(cons
         cmd.target_id = id_;
         cmd.arg1 = event_type_id;
         cmd.arg2 = 0xFFFFFFFF;
+        cmd.arg3 = prevent_default ? 1 : 0;
 
         ctx_->send_command(cmd);
     }

@@ -32,6 +32,8 @@ class Element : public std::enable_shared_from_this<Element> {
 public:
     Element(Context* ctx, const std::string& tag_name);
     Element(Context* ctx, uint32_t tag_name_id);
+    struct SkipCreate {};
+    Element(Context* ctx, SkipCreate);
     virtual ~Element();
 
     uint32_t get_id() const { return id_; }
@@ -67,8 +69,8 @@ public:
     void focus();
     void select();
 
-    void add_event_listener(const std::string& event_type, std::function<void(const Event&)> callback);
-    void add_event_listener(uint32_t event_type_id, std::function<void(const Event&)> callback);
+    void add_event_listener(const std::string& event_type, std::function<void(const Event&)> callback, bool prevent_default = false);
+    void add_event_listener(uint32_t event_type_id, std::function<void(const Event&)> callback, bool prevent_default = false);
 
     // Called by the Context when an event occurs
     virtual void handle_event(const Event& event);

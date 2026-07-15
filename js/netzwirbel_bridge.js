@@ -271,7 +271,11 @@ class NetzWirbelBridge {
                 const el = this.elements.get(targetId);
                 if (el) {
                     const eventType = this.readString(arg1, arg2);
-                    el.addEventListener(eventType, (e) => this.sendEvent(targetId, e));
+                    const preventDefault = (arg3 !== 0);
+                    el.addEventListener(eventType, (e) => {
+                        if (preventDefault) e.preventDefault();
+                        this.sendEvent(targetId, e);
+                    });
                 }
                 break;
             }
@@ -300,14 +304,20 @@ class NetzWirbelBridge {
             }
             case this.CMD.BIND_ELEMENT: {
                 const selector = this.readString(arg1, arg2);
-                const el = document.querySelector(selector);
+                let el = null;
+                if (selector === "window") el = window;
+                else if (selector === "document") el = document;
+                else el = document.querySelector(selector);
+                
                 if (el) {
-                    el.dataset.netzwirbelId = targetId;
+                    if (el.dataset) el.dataset.netzwirbelId = targetId;
                     this.elements.set(targetId, el);
                     
-                    const tagName = el.tagName.toLowerCase();
-                    if (tagName === "input" || tagName === "textarea") {
-                        el.addEventListener("input", (e) => this.sendPropertyChangeString(targetId, "value", el.value));
+                    if (el.tagName) {
+                        const tagName = el.tagName.toLowerCase();
+                        if (tagName === "input" || tagName === "textarea") {
+                            el.addEventListener("input", (e) => this.sendPropertyChangeString(targetId, "value", el.value));
+                        }
                     }
                 } else {
                     console.error("NetzWirbel: BIND_ELEMENT failed to find selector:", selector);

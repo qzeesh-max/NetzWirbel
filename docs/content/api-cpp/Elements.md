@@ -27,3 +27,11 @@ A wrapper for the `canvas` tag.
 A wrapper for the `img` tag.
 - **`std::string get_src() const`**
 - **`void set_src(const std::string& src)`**: Synchronizes the `src` attribute.
+
+## `WindowElement`
+A wrapper around the global DOM `window` object. This element will not create a new DOM node, but rather binds itself to the window if you call `ctx->bind_element(win, "window")`. Useful for handling global events such as `keydown`.
+- **Constructor**: `WindowElement(Context* ctx)`
+
+## `DocumentElement`
+A wrapper around the global DOM `document` object. Similarly, use `ctx->bind_element(doc, "document")`.
+- **Constructor**: `DocumentElement(Context* ctx)`

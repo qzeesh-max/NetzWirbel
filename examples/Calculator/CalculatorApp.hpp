@@ -79,12 +79,32 @@ public:
             
             grid->append_child(btn);
         }
+
+        g_window = std::make_shared<WindowElement>(ctx);
+        ctx->register_element(g_window);
+        ctx->bind_element(g_window, "window");
+        g_window->add_event_listener(ctx->strings.keydown, [this](const Event& e) {
+            auto ke = dynamic_cast<const KeyboardEvent*>(&e);
+            if (ke) {
+                std::string key = ke->get_key();
+                std::string mapped = "";
+                if (key >= "0" && key <= "9") mapped = key;
+                else if (key == "+" || key == "-" || key == "*" || key == "/" || key == ".") mapped = key;
+                else if (key == "Enter" || key == "=") mapped = "=";
+                else if (key == "Escape" || key == "Backspace" || key == "Delete") mapped = "C";
+
+                if (!mapped.empty()) {
+                    this->on_button_click(mapped);
+                }
+            }
+        }, true);
     }
 
 private:
     Context* ctx_ = nullptr;
     std::shared_ptr<HTMLDivElement> g_container;
     std::shared_ptr<HTMLInputElement> g_display;
+    std::shared_ptr<WindowElement> g_window;
 
     std::string current_input = "0";
     std::string previous_input = "";
@@ -98,6 +118,13 @@ private:
     }
 
     void on_button_click(const std::string& label) {
+        if (current_input == "Error" && label != "C") {
+            current_input = "0";
+            previous_input = "";
+            current_op = "";
+            new_input_needed = false;
+        }
+
         if (label >= "0" && label <= "9") {
             if (current_input == "0" || new_input_needed) {
                 current_input = label;
@@ -125,7 +152,17 @@ private:
                 if (current_op == "+") result = prev + curr;
                 if (current_op == "-") result = prev - curr;
                 if (current_op == "*") result = prev * curr;
-                if (current_op == "/") result = curr != 0 ? prev / curr : 0;
+                if (current_op == "/") {
+                    if (curr == 0) {
+                        current_input = "Error";
+                        current_op = "";
+                        previous_input = "";
+                        new_input_needed = true;
+                        update_display();
+                        return;
+                    }
+                    result = prev / curr;
+                }
                 
                 current_input = std::to_string(result);
                 // Remove trailing zeros
@@ -141,6 +178,7 @@ private:
             if (!current_op.empty() && !new_input_needed) {
                 // chaining operators
                 on_button_click("=");
+                if (current_input == "Error") return;
             }
             previous_input = current_input;
             current_op = label;
