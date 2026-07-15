@@ -36,6 +36,7 @@ public:
 
 private:
     std::function<void(const std::string&)> on_change_;
+    std::string text_;
 };
 
 } // namespace NetzWirbel

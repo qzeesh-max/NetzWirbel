@@ -32,19 +32,12 @@ TextArea::TextArea(Context* ctx) : Element(ctx, ctx->strings.textarea) {
 }
 
 void TextArea::set_text(const std::string& text) {
+    text_ = text;
     set_text_content(ctx_->register_string(text));
 }
 
 std::string TextArea::get_text() const {
-    // Actually need to get the value attribute for a textarea
-    // Since Element currently doesn't cache value implicitly if it's set by user input,
-    // wait, in Element.hpp we don't have get_value().
-    // We should implement it similar to get_attribute if needed, 
-    // but the framework doesn't have an easy way to read updated values from the DOM unless it's tracked.
-    // For now, NetzWirbel inputs pass values in input events? No, NetzWirbel relies on `get_value()`.
-    // Let's use `get_attribute(value)` if possible or simply empty string for now.
-    // In NetzWirbel, `HTMLInputElement` tracks its own `get_value()`.
-    return "";
+    return text_;
 }
 
 void TextArea::set_placeholder(const std::string& placeholder) {

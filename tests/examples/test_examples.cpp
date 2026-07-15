@@ -30,16 +30,14 @@
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 EM_JS(void, js_mock_websocket_examples, (), {
-    if (!globalThis.WebSocket) {
-        globalThis.WebSocket = class {
-            constructor(url) {
-                this.url = url;
-                this.readyState = 1;
-            }
-            send(data) {}
-            close() {}
-        };
-    }
+    globalThis.WebSocket = class {
+        constructor(url) {
+            this.url = url;
+            this.readyState = 1;
+        }
+        send(data) {}
+        close() {}
+    };
 });
 #endif
 

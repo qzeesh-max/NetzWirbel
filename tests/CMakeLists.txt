@@ -33,6 +33,7 @@ netzwirbel_add_test(ExamplesTest examples/test_examples.cpp)
 netzwirbel_add_test(FixParserTest examples/FixParserTest.cpp)
 netzwirbel_add_test(ContextTest core/ContextTest.cpp)
 netzwirbel_add_test(ElementTest dom/ElementTest.cpp)
+netzwirbel_add_test(DOMComponentsTest dom/DOMComponentsTest.cpp)
 netzwirbel_add_test(NetworkTest network/NetworkTest.cpp)
 
 if(NETZWIRBEL_ENABLE_COVERAGE)
@@ -44,6 +45,7 @@ if(NETZWIRBEL_ENABLE_COVERAGE)
         COMMAND node RingBufferTest.js || true
         COMMAND node ContextTest.js || true
         COMMAND node ElementTest.js || true
+        COMMAND node DOMComponentsTest.js || true
         COMMAND node NetworkTest.js || true
         COMMAND node ExamplesTest.js || true
         COMMAND lcov --ignore-errors path,inconsistent,unsupported,empty,format,unused,category --directory . --capture --output-file coverage.info

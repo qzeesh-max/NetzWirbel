@@ -262,6 +262,10 @@ public:
         if (idx < cols_.size()) return cols_[idx].current_width;
         return 0;
     }
+    
+    size_t get_row_count() const {
+        return rows_.size();
+    }
 
 private:
     void handle_mousemove(const Event& e) {
