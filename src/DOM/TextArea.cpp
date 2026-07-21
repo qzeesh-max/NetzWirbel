@@ -33,7 +33,7 @@ TextArea::TextArea(Context* ctx) : Element(ctx, ctx->strings.textarea) {
 
 void TextArea::set_text(const std::string& text) {
     text_ = text;
-    set_text_content(ctx_->register_string(text));
+    set_text_content(text);
 }
 
 std::string TextArea::get_text() const {

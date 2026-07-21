@@ -348,7 +348,7 @@ private:
             if (w && w->is_minimized()) {
                 auto btn = std::make_shared<Element>(ctx_, ctx_->strings.button);
                 ctx_->register_element(btn);
-                btn->set_text_content(ctx_->register_string(label));
+                btn->set_text_content(label);
                 btn->set_attribute(ctx_->strings.style, "background: #5c6bc0; color: white; border: none; padding: 4px 8px; font-size: 11px; border-radius: 4px; cursor: pointer;");
                 btn->add_event_listener(ctx_->strings.click, [w](const Event&) {
                     w->set_minimized(false);
@@ -390,7 +390,7 @@ private:
         
         auto lbl = std::make_shared<Element>(ctx_, ctx_->register_string("span"));
         ctx_->register_element(lbl);
-        lbl->set_text_content(ctx_->register_string(label));
+        lbl->set_text_content(label);
         row->append_child(lbl);
 
         auto input = std::make_shared<HTMLInputElement>(ctx_);
@@ -938,7 +938,7 @@ private:
 
     std::stringstream ss;
     ss << side << " Order Entry";
-    order_dialog_title->set_text_content(ctx_->register_string(ss.str()));
+    order_dialog_title->set_text_content(ss.str());
 
     order_dialog_visible_ = true;
     apply_order_dialog_style();
@@ -976,7 +976,7 @@ private:
 
     std::stringstream ss;
     ss << "Modify " << ord.side << " Order (ID: " << ord.id << ")";
-    order_dialog_title->set_text_content(ctx_->register_string(ss.str()));
+    order_dialog_title->set_text_content(ss.str());
 
     order_dialog_visible_ = true;
     apply_order_dialog_style();
@@ -1078,7 +1078,7 @@ private:
         
         auto msg_el = std::make_shared<HTMLDivElement>(ctx_);
         ctx_->register_element(msg_el);
-        msg_el->set_text_content(ctx_->register_string("Warning: " + confirm_msg + " Submit anyway?"));
+        msg_el->set_text_content("Warning: " + confirm_msg + " Submit anyway?");
         msg_el->set_attribute(ctx_->strings.style, "padding: 20px; font-weight: bold; color: #d32f2f;");
         confirm_win->get_content_container()->append_child(msg_el);
 
@@ -1618,11 +1618,11 @@ private:
 
     std::stringstream ss;
     ss << "  Session: " << session_name_ << " (" << state_text << ")";
-    status_text->set_text_content(ctx_->register_string(ss.str()));
+    status_text->set_text_content(ss.str());
 
     std::stringstream seq;
     seq << "Seq: " << sender_seq_num_ << ":" << target_seq_num_;
-    seq_num_text->set_text_content(ctx_->register_string(seq.str()));
+    seq_num_text->set_text_content(seq.str());
 
     std::stringstream sb_style;
     sb_style

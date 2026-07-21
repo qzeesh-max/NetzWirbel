@@ -168,7 +168,7 @@ Window::Window(Context* ctx, const std::string& id, const std::string& title, in
     // Title Text
     title_el_ = std::make_shared<Element>(ctx_, ctx_->register_string("span"));
     ctx_->register_element(title_el_);
-    title_el_->set_text_content(ctx_->register_string(title));
+    title_el_->set_text_content(title);
     title_el_->set_attribute(ctx_->strings.style, 
         "font-weight: bold; color: #333; font-size: 14px; "
         "white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; margin-right: 8px; user-select: none;"
@@ -280,7 +280,7 @@ Window::~Window() {
 }
 
 void Window::set_title(const std::string& title) {
-    title_el_->set_text_content(ctx_->register_string(title));
+    title_el_->set_text_content(title);
 }
 
 void Window::apply_styles() {

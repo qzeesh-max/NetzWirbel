@@ -331,7 +331,7 @@ public:
       th->set_attribute(
           ctx_->strings.style,
           "border: 1px solid #ccc; padding: 5px; background: #eee;");
-      th->set_text_content(ctx_->register_string(c));
+      th->set_text_content(c);
       mdTrh->append_child(th);
     }
     md_table->append_child(mdTrh);
@@ -477,7 +477,7 @@ public:
       th->set_attribute(ctx_->strings.style,
                         "border: 1px solid #ccc; padding: 5px; background: "
                         "#eee; text-align: left;");
-      th->set_text_content(ctx_->register_string(c));
+      th->set_text_content(c);
       ordTrh->append_child(th);
     }
     ord_table->append_child(ordTrh);
@@ -562,7 +562,7 @@ public:
       th->set_attribute(ctx_->strings.style,
                         "border: 1px solid #ccc; padding: 5px; background: "
                         "#eee; text-align: left;");
-      th->set_text_content(ctx_->register_string(c));
+      th->set_text_content(c);
       thR->append_child(th);
     }
     trd_table->append_child(thR);
@@ -585,7 +585,7 @@ public:
       th->set_attribute(ctx_->strings.style,
                         "border: 1px solid #ccc; padding: 5px; background: "
                         "#eee; text-align: left;");
-      th->set_text_content(ctx_->register_string(c));
+      th->set_text_content(c);
       thR->append_child(th);
     }
     rej_table->append_child(thR);
@@ -839,7 +839,7 @@ public:
                            to_string(m.lastSz),
                            to_string(m.volume)};
     for (int i = 0; i < 8; i++) {
-      cells[i]->set_text_content(ctx_->register_string(vals[i]));
+      cells[i]->set_text_content(vals[i]);
     }
   }
 
@@ -855,7 +855,7 @@ public:
                               "background-color: #d1ecf1; cursor: pointer;");
             selOrdRow = tr;
             selectedOrderId = id;
-            selOrdIdDisp->set_text_content(ctx_->register_string(id));
+            selOrdIdDisp->set_text_content(id);
             if (orders.find(id) != orders.end()) {
               repQtyIn->set_value(to_string(orders[id].qty));
               repPxIn->set_value(to_string(orders[id].price));
@@ -887,7 +887,7 @@ public:
                            to_string(o.avgPx),
                            o.status};
     for (int i = 0; i < 8; i++) {
-      cells[i]->set_text_content(ctx_->register_string(vals[i]));
+      cells[i]->set_text_content(vals[i]);
     }
   }
 
@@ -929,7 +929,7 @@ public:
       ctx_->register_element(td);
       td->set_attribute(ctx_->strings.style,
                         "border: 1px solid #ccc; padding: 5px;");
-      td->set_text_content(ctx_->register_string(v));
+      td->set_text_content(v);
       tr->append_child(td);
     }
     trd_table->append_child(tr);
@@ -951,7 +951,7 @@ public:
       ctx_->register_element(td);
       td->set_attribute(ctx_->strings.style,
                         "border: 1px solid #ccc; padding: 5px;");
-      td->set_text_content(ctx_->register_string(v));
+      td->set_text_content(v);
       tr->append_child(td);
     }
     rej_table->append_child(tr);
@@ -1197,10 +1197,10 @@ public:
     }
     
     status_light->set_attribute(ctx_->strings.style, lightStyle);
-    status_text->set_text_content(ctx_->register_string(textLabel));
+    status_text->set_text_content(textLabel);
     
     std::string seqs = std::to_string(senderSeqNum_) + ":" + std::to_string(targetSeqNum_);
-    seq_num_text->set_text_content(ctx_->register_string(seqs));
+    seq_num_text->set_text_content(seqs);
   }
 
   void connectWebSocket() {

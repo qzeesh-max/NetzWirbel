@@ -107,7 +107,7 @@ void Spinner::update_display() {
     } else {
         ss << std::fixed << std::setprecision(precision_) << value_;
     }
-    display_text_->set_text_content(ctx_->register_string(ss.str()));
+    display_text_->set_text_content(ss.str());
 }
 
 } // namespace NetzWirbel

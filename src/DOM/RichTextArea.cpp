@@ -28,7 +28,7 @@ RichTextArea::RichTextArea(Context* ctx) : HTMLDivElement(ctx) {
 void RichTextArea::set_html(const std::string& html) {
     // Basic setting of inner HTML via command to JS is ideally needed
     // Assuming set_text_content acts as innerHTML in NetzWirbel for now, or just setting raw text
-    set_text_content(ctx_->register_string(html));
+    set_text_content(html);
 }
 
 } // namespace NetzWirbel

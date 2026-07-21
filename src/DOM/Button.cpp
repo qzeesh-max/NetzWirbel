@@ -47,12 +47,12 @@ Button::Button(Context* ctx) : HTMLButtonElement(ctx) {
 }
 
 void Button::set_text(const std::string& text) {
-    text_el_->set_text_content(ctx_->register_string(text));
+    text_el_->set_text_content(text);
     text_el_->set_attribute(ctx_->strings.style, "display: inline;");
 }
 
 void Button::set_icon(const std::string& icon_text) {
-    icon_el_->set_text_content(ctx_->register_string(icon_text));
+    icon_el_->set_text_content(icon_text);
     icon_el_->set_attribute(ctx_->strings.style, "display: inline; font-size: 1.1em;");
 }
 

@@ -61,7 +61,7 @@ public:
     void add_cell(const std::string& text, int width_px, const std::string& col_name = "") {
         auto cell = std::make_shared<HTMLDivElement>(ctx_);
         ctx_->register_element(cell);
-        cell->set_text_content(ctx_->register_string(text));
+        cell->set_text_content(text);
         
         std::stringstream ss;
         ss << "padding: 6px; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; user-select: none; ";
@@ -138,7 +138,7 @@ public:
         
         auto span = std::make_shared<Element>(ctx_, ctx_->register_string("span"));
         ctx_->register_element(span);
-        span->set_text_content(ctx_->register_string(name));
+        span->set_text_content(name);
         span->set_attribute(ctx_->strings.style, "overflow: hidden; text-overflow: ellipsis; white-space: nowrap;");
         label_cont->append_child(span);
         
@@ -325,7 +325,7 @@ public:
         for (int i = 0; i < cols_.size(); ++i) {
             if (cols_[i].sort_icon_el) {
                 if (i == sort_col_idx_) {
-                    cols_[i].sort_icon_el->set_text_content(ctx_->register_string(sort_dir_ == SORT_ASC ? "▲" : (sort_dir_ == SORT_DESC ? "▼" : "")));
+                    cols_[i].sort_icon_el->set_text_content(sort_dir_ == SORT_ASC ? "▲" : (sort_dir_ == SORT_DESC ? "▼" : ""));
                 } else {
                     cols_[i].sort_icon_el->set_text_content(ctx_->register_string(""));
                 }
