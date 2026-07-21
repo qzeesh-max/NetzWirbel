@@ -16,17 +16,16 @@
  */
 
 class RingBufferConsumer {
-    constructor(wasmMemory, headerOffset, capacity, itemSize) {
+    constructor(wasmMemory, headerOffset, capacity, itemSize, layout = {headerSize: 384, headOffset: 0, tailOffset: 128}) {
         this.memory = wasmMemory;
         this.headerOffset = headerOffset;
         this.capacity = capacity;
         this.itemSize = itemSize;
         
-        this.headArray = new Uint32Array(wasmMemory.buffer, headerOffset, 1);
-        this.tailArray = new Uint32Array(wasmMemory.buffer, headerOffset + 4, 1);
+        this.headArray = new Uint32Array(wasmMemory.buffer, headerOffset + layout.headOffset, 1);
+        this.tailArray = new Uint32Array(wasmMemory.buffer, headerOffset + layout.tailOffset, 1);
         
-        // RingBufferHeader is alignas(8) and has 5 * uint32_t (20 bytes) => rounded up to 24 bytes
-        this.bufferStart = headerOffset + 24; 
+        this.bufferStart = headerOffset + layout.headerSize; 
     }
     
     isEmpty() {
@@ -55,15 +54,16 @@ class RingBufferConsumer {
 }
 
 class RingBufferProducer {
-    constructor(wasmMemory, headerOffset, capacity, itemSize) {
+    constructor(wasmMemory, headerOffset, capacity, itemSize, layout = {headerSize: 384, headOffset: 0, tailOffset: 128}) {
         this.memory = wasmMemory;
         this.headerOffset = headerOffset;
         this.capacity = capacity;
         this.itemSize = itemSize;
         
-        this.headArray = new Int32Array(wasmMemory.buffer, headerOffset, 1);
-        this.tailArray = new Int32Array(wasmMemory.buffer, headerOffset + 4, 1);
-        this.bufferStart = headerOffset + 24; 
+        this.headArray = new Int32Array(wasmMemory.buffer, headerOffset + layout.headOffset, 1);
+        this.tailArray = new Int32Array(wasmMemory.buffer, headerOffset + layout.tailOffset, 1);
+        
+        this.bufferStart = headerOffset + layout.headerSize; 
     }
     
     isFull() {
@@ -92,16 +92,21 @@ class RingBufferProducer {
 }
 
 class NetzWirbelBridge {
-    constructor(wasmMemory, cppToJsOffset, jsToCppOffset, capacity, mallocFn, freeFn) {
+    constructor(wasmMemory, cppToJsOffset, jsToCppOffset, capacity, mallocFn, freeFn, layout = {}) {
         this.memory = wasmMemory;
         this.malloc = mallocFn;
         this.free = freeFn;
         
-        // Command (C++ -> JS): 32 bytes (size of Command struct)
-        this.cppToJs = new RingBufferConsumer(wasmMemory, cppToJsOffset, capacity, 32);
+        const safeLayout = {
+            cmdSize: layout.cmdSize || 32,
+            evSize: layout.evSize || 64,
+            headerSize: layout.headerSize || 384,
+            headOffset: layout.headOffset || 0,
+            tailOffset: layout.tailOffset !== undefined ? layout.tailOffset : 128
+        };
         
-        // EventMsg (JS -> C++): 64 bytes (size of EventMsg struct)
-        this.jsToCpp = new RingBufferProducer(wasmMemory, jsToCppOffset, capacity, 64);
+        this.cppToJs = new RingBufferConsumer(wasmMemory, cppToJsOffset, capacity, safeLayout.cmdSize, safeLayout);
+        this.jsToCpp = new RingBufferProducer(wasmMemory, jsToCppOffset, capacity, safeLayout.evSize, safeLayout);
         
         this.elements = new Map();
         this.stringRegistry = new Map();

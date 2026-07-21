@@ -57,6 +57,31 @@ void netzwirbel_tick(double time) {
     }
 }
 
+EMSCRIPTEN_KEEPALIVE
+size_t netzwirbel_get_ring_buffer_header_size() {
+    return sizeof(NetzWirbel::RingBufferHeader);
+}
+
+EMSCRIPTEN_KEEPALIVE
+size_t netzwirbel_get_command_size() {
+    return sizeof(NetzWirbel::Command);
+}
+
+EMSCRIPTEN_KEEPALIVE
+size_t netzwirbel_get_event_msg_size() {
+    return sizeof(NetzWirbel::EventMsg);
+}
+
+EMSCRIPTEN_KEEPALIVE
+size_t netzwirbel_get_ring_buffer_head_offset() {
+    return offsetof(NetzWirbel::RingBufferHeader, head);
+}
+
+EMSCRIPTEN_KEEPALIVE
+size_t netzwirbel_get_ring_buffer_tail_offset() {
+    return offsetof(NetzWirbel::RingBufferHeader, tail);
+}
+
 } // extern "C"
 
 void run_app(std::unique_ptr<App> app) {

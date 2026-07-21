@@ -149,14 +149,25 @@ app.get('/run/:example', (req, res) => {
             var Module = {
                 onRuntimeInitialized: function() {
                     const capacity = 8192; // Increased to 8192 to allow large initialization bursts
-                    const ringBufferSize = 24 + (capacity * 64);
                     
-                    const cppToJsPtr = _malloc(ringBufferSize);
-                    const jsToCppPtr = _malloc(ringBufferSize);
+                    const cmdSize = _netzwirbel_get_command_size ? _netzwirbel_get_command_size() : 32;
+                    const evSize = _netzwirbel_get_event_msg_size ? _netzwirbel_get_event_msg_size() : 64;
+                    const headerSize = _netzwirbel_get_ring_buffer_header_size ? _netzwirbel_get_ring_buffer_header_size() : 384;
+                    
+                    const cppToJsPtr = _malloc(capacity * cmdSize + headerSize);
+                    const jsToCppPtr = _malloc(capacity * evSize + headerSize);
                     
                     _netzwirbel_init(cppToJsPtr, jsToCppPtr, capacity);
                     
-                    const bridge = new NetzWirbelBridge(Module.wasmMemory, cppToJsPtr, jsToCppPtr, capacity, _malloc, _free);
+                    const layout = {
+                        cmdSize: cmdSize,
+                        evSize: evSize,
+                        headerSize: headerSize,
+                        headOffset: (typeof _netzwirbel_get_ring_buffer_head_offset === "function") ? _netzwirbel_get_ring_buffer_head_offset() : 0,
+                        tailOffset: (typeof _netzwirbel_get_ring_buffer_tail_offset === "function") ? _netzwirbel_get_ring_buffer_tail_offset() : 128
+                    };
+                    
+                    const bridge = new NetzWirbelBridge(Module.wasmMemory, cppToJsPtr, jsToCppPtr, capacity, _malloc, _free, layout);
                     
                     function loop(time) {
                         bridge.processCommands();

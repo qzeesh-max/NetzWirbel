@@ -5,13 +5,15 @@ The `NetzWirbelBridge` class is the main Javascript orchestrator. It sits in the
 ## Constructor
 
 ```javascript
-new NetzWirbelBridge(wasmMemory, cppToJsOffset, jsToCppOffset, capacity, mallocFn)
+new NetzWirbelBridge(wasmMemory, cppToJsOffset, jsToCppOffset, capacity, mallocFn, freeFn, layout)
 ```
 - **`wasmMemory`**: The `WebAssembly.Memory` instance exported by your Wasm module.
 - **`cppToJsOffset`**: The byte offset where the Command ring buffer starts.
 - **`jsToCppOffset`**: The byte offset where the EventMsg ring buffer starts.
 - **`capacity`**: Maximum capacity of the ring buffers (must match C++ capacity).
 - **`mallocFn`**: Reference to the Wasm module's `_malloc` function, used to allocate memory for strings passed from JS back to C++.
+- **`freeFn`**: Reference to the Wasm module's `_free` function, used to avoid memory leaks.
+- **`layout`**: Optional object to dynamically map the C++ `Command` sizes, `EventMsg` sizes, and `RingBufferHeader` sizes instead of using hardcoded magic numbers.
 
 ## Main Loop
 

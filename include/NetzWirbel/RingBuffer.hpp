@@ -23,14 +23,24 @@
 
 namespace NetzWirbel {
 
+constexpr size_t CACHE_LINE_SIZE = 128;
+
 // A simple header for the ring buffer that sits at the start of the allocated memory.
-// We align it to 8 bytes to avoid unaligned access penalties.
+// We align it to 8 bytes to avoid unaligned access penalties, but explicitly pad
+// the members to 128 bytes to avoid false sharing across different host cache line sizes (e.g., ARM).
 struct alignas(8) RingBufferHeader {
     std::atomic<uint32_t> head; // Index where producer writes
+    uint8_t padding1[CACHE_LINE_SIZE - sizeof(std::atomic<uint32_t>)];
+
     std::atomic<uint32_t> tail; // Index where consumer reads
+    uint8_t padding2[CACHE_LINE_SIZE - sizeof(std::atomic<uint32_t>)];
+
     uint32_t capacity;          // Must be a power of 2
     uint32_t item_size;         // Size of each item in bytes
     std::atomic<uint32_t> state; // General purpose state flag for synchronization
+    
+    // Pad out the rest to the next cache line boundary
+    uint8_t padding3[CACHE_LINE_SIZE - (sizeof(uint32_t) * 2 + sizeof(std::atomic<uint32_t>))];
 };
 
 // Represents the lock-free ring buffer for WebAssembly SharedArrayBuffer

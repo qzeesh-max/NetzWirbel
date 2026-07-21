@@ -9,28 +9,21 @@ In your C++ WebAssembly application, you need to create an instance of `NetzWirb
 ```cpp
 #include "NetzWirbel/Context.hpp"
 #include <emscripten.h>
-#include <malloc.h>
 
 // Global context pointer
 NetzWirbel::Context* g_ctx = nullptr;
 
 extern "C" {
-    // Exported function for JS to initialize the bridge
+    // Exported function for JS to initialize the C++ Context.
+    // JavaScript dynamically fetches sizes, allocates memory, 
+    // and passes the memory pointers into this function.
     EMSCRIPTEN_KEEPALIVE
-    void init_netzwirbel() {
-        uint32_t capacity = 1024;
-        // Allocate memory for the ring buffers
-        size_t buffer_size = NetzWirbel::RingBuffer::calculate_size(capacity, 64);
-        void* cpp_to_js_mem = memalign(8, buffer_size);
-        void* js_to_cpp_mem = memalign(8, buffer_size);
-
-        // Initialize the Context
+    void netzwirbel_init(void* cpp_to_js_mem, void* js_to_cpp_mem, uint32_t capacity) {
+        if (g_ctx) {
+            delete g_ctx;
+        }
+        // Initialize the Context using the memory allocated by JS
         g_ctx = new NetzWirbel::Context(cpp_to_js_mem, js_to_cpp_mem, capacity);
-        
-        // Pass pointers back to JS (using EM_ASM or letting JS read globals/returns)
-        EM_ASM({
-            window.setupBridge($0, $1, $2);
-        }, cpp_to_js_mem, js_to_cpp_mem, capacity);
     }
 }
 ```
@@ -43,12 +36,33 @@ On the JavaScript side, you need to instantiate the `NetzWirbelBridge` and provi
 // Assuming your Wasm module is loaded into a variable `wasmModule`
 // and you have included `netzwirbel_bridge.js`
 
-window.setupBridge = function(cppToJsOffset, jsToCppOffset, capacity) {
+window.setupBridge = function(capacity) {
     const memory = wasmModule.memory;
-    const mallocFn = wasmModule._malloc; // Needed for string allocation
+    const mallocFn = wasmModule._malloc;
+    const freeFn = wasmModule._free;
+    
+    // Dynamically fetch exact structure sizes from Wasm
+    const cmdSize = wasmModule._netzwirbel_get_command_size();
+    const evSize = wasmModule._netzwirbel_get_event_msg_size();
+    const headerSize = wasmModule._netzwirbel_get_ring_buffer_header_size();
+    
+    // Allocate memory on the WebAssembly heap
+    const cppToJsOffset = mallocFn(capacity * cmdSize + headerSize);
+    const jsToCppOffset = mallocFn(capacity * evSize + headerSize);
+    
+    const layout = {
+        cmdSize: cmdSize,
+        evSize: evSize,
+        headerSize: headerSize,
+        headOffset: wasmModule._netzwirbel_get_ring_buffer_head_offset(),
+        tailOffset: wasmModule._netzwirbel_get_ring_buffer_tail_offset()
+    };
+    
+    // Tell C++ to initialize the context with our allocated memory
+    wasmModule._netzwirbel_init(cppToJsOffset, jsToCppOffset, capacity);
     
     // Create the bridge
-    const bridge = new NetzWirbelBridge(memory, cppToJsOffset, jsToCppOffset, capacity, mallocFn);
+    const bridge = new NetzWirbelBridge(memory, cppToJsOffset, jsToCppOffset, capacity, mallocFn, freeFn, layout);
     
     // Start the polling loop
     startNetzWirbelLoop(bridge);

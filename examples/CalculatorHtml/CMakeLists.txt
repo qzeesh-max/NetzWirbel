@@ -8,7 +8,7 @@ set_target_properties(CalculatorHtml PROPERTIES
 
 if (EMSCRIPTEN)
     set_target_properties(CalculatorHtml PROPERTIES
-        LINK_FLAGS "-s EXPORTED_FUNCTIONS=_main,_malloc,_free,_netzwirbel_init,_netzwirbel_tick -s EXPORTED_RUNTIME_METHODS=ccall,cwrap,UTF8ToString,stringToUTF8,lengthBytesUTF8,wasmMemory -s ALLOW_MEMORY_GROWTH=1"
+        LINK_FLAGS "-s EXPORTED_FUNCTIONS=_main,_malloc,_free,_netzwirbel_init,_netzwirbel_tick,_netzwirbel_get_ring_buffer_header_size,_netzwirbel_get_command_size,_netzwirbel_get_event_msg_size,_netzwirbel_get_ring_buffer_head_offset,_netzwirbel_get_ring_buffer_tail_offset -s EXPORTED_RUNTIME_METHODS=ccall,cwrap,UTF8ToString,stringToUTF8,lengthBytesUTF8,wasmMemory -s ALLOW_MEMORY_GROWTH=1"
     )
 endif()
 

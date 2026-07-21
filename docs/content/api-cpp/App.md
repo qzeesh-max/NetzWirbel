@@ -38,3 +38,5 @@ Behind the scenes, `run_app` will:
 2. Manage the `Context` allocation when `netzwirbel_init` is called from JS.
 3. Automatically route `netzwirbel_init` to `on_init()`.
 4. Automatically route `netzwirbel_tick` to `on_tick()`.
+
+In addition to `netzwirbel_init` and `netzwirbel_tick`, NetzWirbel exports several `_netzwirbel_get_*` size and offset functions so the JavaScript frontend can dynamically allocate the exact memory required for the `RingBuffer` without relying on magic numbers.
