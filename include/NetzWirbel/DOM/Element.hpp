@@ -70,6 +70,8 @@ public:
     void set_text_content(const std::string& text);
     void set_text_content(uint32_t text_id);
     void set_text_content_conflated(const std::string& text);
+    void set_class_conflated(const std::string& class_name);
+    void set_style_conflated(const std::string& name, const std::string& value);
 
     virtual void append_child(std::shared_ptr<Element> child);
     virtual void remove_child(std::shared_ptr<Element> child);
@@ -93,6 +95,10 @@ protected:
     std::string text_content_;
     
     ConflatedText conflated_text_;
+    ConflatedText conflated_class_;
+    std::unordered_map<std::string, std::unique_ptr<ConflatedText>> conflated_styles_;
+    
+    std::string get_conflated_string_for_cleanup(uint64_t val);
     std::unordered_map<std::string, std::vector<std::function<void(const Event&)>>> event_listeners_;
     std::vector<std::shared_ptr<Element>> children_;
     Element* parent_ = nullptr;

@@ -28,6 +28,9 @@ void set_attribute(uint32_t key_id, uint32_t value_id);
 ```
 Issues a `SET_ATTRIBUTE` command. Overloads taking `uint32_t` IDs map to registered strings in the JS bridge.
 
+### `void set_class_conflated(const std::string& class_name)`
+Issues a lock-free, O(1) amortized `SET_CLASS_CONFLATED` command. It bypasses the standard ring buffer queue, ensuring that if multiple rapid updates to `className` occur before Javascript can render them, only the very latest class is transmitted. Highly recommended for rapidly changing visual states (like market data up/down ticks).
+
 ### `void set_style(...)`
 ```cpp
 void set_style(const std::string& name, const std::string& value);
@@ -35,6 +38,9 @@ void remove_style(const std::string& name);
 void set_styles(std::initializer_list<std::pair<std::string, std::string>> styles);
 ```
 Issues a highly efficient `SET_STYLES` command. Mutates only the specified CSS properties without rewriting or touching the entire `style` string attribute, preventing conflicts with other styles. Passing an empty string value via `set_style`, or using `remove_style`, will remove the CSS property from the element.
+
+### `void set_style_conflated(const std::string& name, const std::string& value)`
+Issues a lock-free, O(1) amortized `SET_STYLE_CONFLATED` command for an individual CSS property. Uses a dedicated atomic pointer per CSS property to safely conflate redundant style updates (e.g. rapidly changing `color` or `width`) without filling the standard queue.
 
 ### `void set_property(...)`
 ```cpp
@@ -56,6 +62,9 @@ void set_text_content(const std::string& text);
 void set_text_content(uint32_t text_id);
 ```
 Issues a `SET_TEXT_CONTENT` command.
+
+### `void set_text_content_conflated(const std::string& text)`
+Updates the text content of the element using a lock-free, O(1) amortized approach (`SET_TEXT_CONTENT_CONFLATED`). If multiple text updates are issued before Javascript processes them, intermediate updates are safely discarded in C++, leaving only the final text string for JS to read. This is crucial for high-frequency data applications (like 60Hz order books).
 
 ### `void append_child(std::shared_ptr<Element> child)`
 Appends another Element instance as a child node in the DOM. Issues an `APPEND_CHILD` command.

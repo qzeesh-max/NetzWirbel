@@ -146,7 +146,9 @@ class NetzWirbelBridge {
             SELECT: 13,
             SET_NUMERIC_ONLY: 14,
             SET_STYLES: 15,
-            SET_TEXT_CONTENT_CONFLATED: 16
+            SET_TEXT_CONTENT_CONFLATED: 16,
+            SET_CLASS_CONFLATED: 17,
+            SET_STYLE_CONFLATED: 18
         };
         
         this.EVENT = {
@@ -322,6 +324,51 @@ class NetzWirbelBridge {
                         const ptr = Number(val & 0xFFFFFFFFn);
                         const text = this.readString(ptr, len);
                         el.textContent = text;
+                    }
+                }
+                break;
+            }
+            case this.CMD.SET_CLASS_CONFLATED: {
+                const el = this.elements.get(targetId);
+                if (el) {
+                    const structPtr = arg1;
+                    
+                    const heapU32 = new Uint32Array(this.memory.buffer);
+                    Atomics.store(heapU32, (structPtr / 4) + 2, 0); 
+                    
+                    const heapU64 = new BigInt64Array(this.memory.buffer);
+                    const val = Atomics.exchange(heapU64, structPtr / 8, 0n);
+                    
+                    if (val !== 0n) {
+                        const len = Number(val >> 32n);
+                        const ptr = Number(val & 0xFFFFFFFFn);
+                        const text = this.readString(ptr, len);
+                        el.className = text;
+                    }
+                }
+                break;
+            }
+            case this.CMD.SET_STYLE_CONFLATED: {
+                const el = this.elements.get(targetId);
+                if (el) {
+                    const structPtr = arg1;
+                    
+                    const heapU32 = new Uint32Array(this.memory.buffer);
+                    Atomics.store(heapU32, (structPtr / 4) + 2, 0); 
+                    
+                    const heapU64 = new BigInt64Array(this.memory.buffer);
+                    const val = Atomics.exchange(heapU64, structPtr / 8, 0n);
+                    
+                    if (val !== 0n) {
+                        const len = Number(val >> 32n);
+                        const ptr = Number(val & 0xFFFFFFFFn);
+                        const styles = this.readString(ptr, len);
+                        const sepIdx = styles.indexOf(':');
+                        if (sepIdx > 0) {
+                            const key = styles.substring(0, sepIdx).trim();
+                            const val = styles.substring(sepIdx + 1).replace(';', '').trim();
+                            el.style[key] = val;
+                        }
                     }
                 }
                 break;

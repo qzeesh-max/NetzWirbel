@@ -207,14 +207,7 @@ private:
                                 row_ptr->get_cell(6)->set_text_content_conflated(parts[6]);
 
                                 std::string color_class = (tr.last_px >= old_last) ? "md-cell md-up" : "md-cell md-down";
-                                row_ptr->get_cell(5)->set_attribute("class", color_class);
-                                
-                                int col_width = g_grid->get_col_width(5);
-                                std::stringstream css;
-                                css << "padding: 6px; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; user-select: none; ";
-                                css << "width: " << col_width << "px; min-width: " << col_width << "px; max-width: " << col_width << "px;";
-                                
-                                row_ptr->get_cell(5)->set_attribute(ctx_->strings.style, css.str());
+                                row_ptr->get_cell(5)->set_class_conflated(color_class);
                             }
                             break;
                         }

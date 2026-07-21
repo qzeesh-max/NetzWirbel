@@ -14,7 +14,16 @@ enum class CommandType : uint32_t {
     ADD_EVENT_LISTENER = 6,
     APPEND_CHILD = 7,
     SET_TEXT_CONTENT = 8,
-    PING = 9
+    PING = 9,
+    BIND_ELEMENT = 10,
+    REGISTER_STRING = 11,
+    FOCUS = 12,
+    SELECT = 13,
+    SET_NUMERIC_ONLY = 14,
+    SET_STYLES = 15,
+    SET_TEXT_CONTENT_CONFLATED = 16,
+    SET_CLASS_CONFLATED = 17,
+    SET_STYLE_CONFLATED = 18
 };
 ```
 

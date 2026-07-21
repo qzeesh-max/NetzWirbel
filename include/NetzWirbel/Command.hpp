@@ -36,7 +36,9 @@ enum class CommandType : uint32_t {
     SELECT = 13,
     SET_NUMERIC_ONLY = 14,
     SET_STYLES = 15,
-    SET_TEXT_CONTENT_CONFLATED = 16
+    SET_TEXT_CONTENT_CONFLATED = 16,
+    SET_CLASS_CONFLATED = 17,
+    SET_STYLE_CONFLATED = 18
 };
 
 // Represents a command from C++ to JS

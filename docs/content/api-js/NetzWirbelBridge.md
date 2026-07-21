@@ -35,3 +35,12 @@ function startNetzWirbelLoop(bridge) {
 - **`handleCommand(type, targetId, ...)`**: Contains the core `switch` statement that executes DOM mutations based on the `CommandType`.
 - **`sendEvent(targetId, e)`**: Serializes a standard DOM event and pushes an `EventMsg` to the `jsToCpp` producer.
 - **`sendPropertyChangeString(targetId, propName, value)`**: Used to implement two-way bindings (like `<input>` values), sending updates immediately to C++.
+
+## Lock-Free Conflation
+
+For extreme throughput updates (e.g., market data ticks), `NetzWirbelBridge` supports three lock-free amortized O(1) conflation commands:
+- `SET_TEXT_CONTENT_CONFLATED`
+- `SET_CLASS_CONFLATED`
+- `SET_STYLE_CONFLATED`
+
+These commands utilize the shared `WebAssembly.Memory` buffer (`Atomics.exchange`) to extract lengths and pointers for strings that have been written atomically by C++. This avoids queuing redundant DOM mutations when the browser tab is heavily loaded or asleep.

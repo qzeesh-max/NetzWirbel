@@ -142,7 +142,7 @@ private:
                             tr.vol_el->set_text_content_conflated(parts[6]);
 
                             std::string color = (tr.last_px >= old_last) ? "#00ff00" : "#ff4444";
-                            tr.last_px_el->set_style("color", color);
+                            tr.last_px_el->set_style_conflated("color", color);
                             break;
                         }
                     }

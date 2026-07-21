@@ -37,6 +37,12 @@ Sends a ping command to Javascript to measure Round Trip Time (RTT).
 ### `RTTStats get_rtt_stats() const`
 Returns the latency statistics measured by ping/pong interactions.
 
+### `void increment_conflation_hits()`
+Increments the internal lock-free counter for tracking the number of redundant DOM updates skipped by the conflation engine. Used internally by `Element`.
+
+### `uint64_t get_conflation_hits() const`
+Returns the total number of conflation hits (redundant commands skipped) since context initialization.
+
 ### `uint32_t register_string(const std::string& str)`
 Registers a string with the Javascript bridge and returns a persistent unique ID. This prevents the framework from repeatedly transmitting the same string (e.g., heavily used attribute keys or values) over the ring buffer, saving memory and performance. 
 

@@ -29,23 +29,24 @@ NetzWirbel::Network::set_websocket_on_message([](const std::string& msg) {
 NetzWirbel::Network::connect_websocket("ws://localhost:3000");
 ```
 
-## 3. High-Frequency Updates
+## 3. High-Frequency Updates & Lock-Free Conflation
 
-When a message like `MD|SYM10|100.50|100.40|100.60|500|500|10000` is received, the C++ code locates the relevant row and issues batch updates.
+When a message like `MD|SYM10|100.50|100.40|100.60|500|500|10000` is received, the C++ code locates the relevant row and updates its cells. Because market data can arrive faster than the browser can render frames (60Hz), NetzWirbel provides lock-free, O(1) amortized **conflation** methods. 
+
+Instead of queueing thousands of redundant price updates into the ring buffer, the app uses `set_text_content_conflated`:
 
 ```cpp
-tr.cells[5]->set_text_content(parts[1]); // Update Last Price
+row_ptr->get_cell(5)->set_text_content_conflated(parts[1]); // Update Last Price Lock-Free
 ```
 
-To provide visual feedback (flashing green for an uptick, red for a downtick), it dynamically modifies the `style` attribute of the price cell:
+To provide visual feedback (flashing green for an uptick, red for a downtick), it dynamically modifies the `className` using `set_class_conflated`:
 ```cpp
-std::string color = (tr.last_px >= old_last) ? "#00ff00" : "#ff4444";
-std::string cell_style = "... background-color: " + row_bg + "; color: " + color + "; transition: color 0.2s;";
-tr.cells[5]->set_attribute("style", cell_style);
+std::string color_class = (tr.last_px >= old_last) ? "md-cell md-up" : "md-cell md-down";
+row_ptr->get_cell(5)->set_class_conflated(color_class);
 ```
 
-Because NetzWirbel writes these updates sequentially into a lock-free ring buffer, thousands of cell updates per second can be queued in C++ and flushed efficiently to Javascript, avoiding the severe performance degradation typical of heavy JS interop.
+If multiple updates arrive before the JS event loop can process them, the C++ bridge safely skips the old commands and simply overwrites an atomic pointer. When Javascript finally renders the frame, it reads the absolute freshest data directly from the shared memory.
 
 ## 4. Performance Statistics
 
-At the bottom of the screen, the example appends a stats pane that displays the round-trip time (RTT) metrics collected by NetzWirbel's ping/pong mechanism, demonstrating the low latency of the shared memory bridge.
+At the bottom of the screen, the example appends a stats pane that displays the round-trip time (RTT) metrics collected by NetzWirbel's ping/pong mechanism, as well as the **Conflated Hits** counter (`ctx_->get_conflation_hits()`). The hit counter demonstrates how many thousands of redundant DOM updates were safely dropped by the lock-free conflation engine during data bursts.

@@ -287,6 +287,67 @@ void Element::set_text_content(const std::string& text) {
     ctx_->send_command(cmd);
 }
 
+void Element::set_class_conflated(const std::string& class_name) {
+    char* str_ptr = new char[class_name.size() + 1];
+    std::strcpy(str_ptr, class_name.c_str());
+    
+    uint64_t ptr_and_len = (static_cast<uint64_t>(class_name.size()) << 32) | (reinterpret_cast<uint64_t>(str_ptr) & 0xFFFFFFFF);
+    uint64_t old_val = conflated_class_.ptr_and_len.exchange(ptr_and_len, std::memory_order_acq_rel);
+    
+    if (old_val != 0) {
+        std::string old_str = get_conflated_string_for_cleanup(old_val);
+    }
+    
+    uint32_t expected = 0;
+    if (conflated_class_.queued.compare_exchange_strong(expected, 1, std::memory_order_acq_rel)) {
+        Command cmd;
+        cmd.type = CommandType::SET_CLASS_CONFLATED;
+        cmd.target_id = id_;
+        cmd.arg1 = reinterpret_cast<uint32_t>(&conflated_class_);
+        ctx_->send_command(cmd);
+    } else {
+        ctx_->increment_conflation_hits();
+    }
+}
+
+void Element::set_style_conflated(const std::string& name, const std::string& value) {
+    auto& conflated = conflated_styles_[name];
+    if (!conflated) {
+        conflated = std::make_unique<ConflatedText>();
+    }
+
+    std::string css = name + ":" + value;
+    char* str_ptr = new char[css.size() + 1];
+    std::strcpy(str_ptr, css.c_str());
+    
+    uint64_t ptr_and_len = (static_cast<uint64_t>(css.size()) << 32) | (reinterpret_cast<uint64_t>(str_ptr) & 0xFFFFFFFF);
+    uint64_t old_val = conflated->ptr_and_len.exchange(ptr_and_len, std::memory_order_acq_rel);
+    
+    if (old_val != 0) {
+        std::string old_str = get_conflated_string_for_cleanup(old_val);
+    }
+    
+    uint32_t expected = 0;
+    if (conflated->queued.compare_exchange_strong(expected, 1, std::memory_order_acq_rel)) {
+        Command cmd;
+        cmd.type = CommandType::SET_STYLE_CONFLATED;
+        cmd.target_id = id_;
+        cmd.arg1 = reinterpret_cast<uint32_t>(conflated.get());
+        ctx_->send_command(cmd);
+    } else {
+        ctx_->increment_conflation_hits();
+    }
+}
+
+std::string Element::get_conflated_string_for_cleanup(uint64_t val) {
+    uint32_t ptr = static_cast<uint32_t>(val & 0xFFFFFFFF);
+    uint32_t len = static_cast<uint32_t>(val >> 32);
+    char* str_ptr = reinterpret_cast<char*>(static_cast<uintptr_t>(ptr));
+    std::string str(str_ptr, len);
+    delete[] str_ptr;
+    return str;
+}
+
 void Element::set_text_content(uint32_t text_id) {
     Command cmd;
     cmd.type = CommandType::SET_TEXT_CONTENT;
