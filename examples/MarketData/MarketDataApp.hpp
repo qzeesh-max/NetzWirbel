@@ -151,7 +151,8 @@ public:
                << " | Median: " << format_price(stats.median)
                << " | Mode: " << format_price(stats.mode)
                << " | StdDev: " << format_price(stats.stddev)
-               << " | p99: " << format_price(stats.p99);
+               << " | p99: " << format_price(stats.p99)
+               << " | Conflated Hits: " << ctx_->get_conflation_hits();
             g_stats_pane->set_text_content_conflated(ss.str());
             last_stats_time = time;
         }

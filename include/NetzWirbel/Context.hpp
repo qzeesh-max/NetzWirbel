@@ -23,6 +23,7 @@
 #include <string>
 #include <deque>
 #include <vector>
+#include <atomic>
 
 namespace NetzWirbel {
 
@@ -75,6 +76,9 @@ public:
     void send_ping();
     RTTStats get_rtt_stats() const;
 
+    void increment_conflation_hits() { conflation_hits_.fetch_add(1, std::memory_order_relaxed); }
+    uint64_t get_conflation_hits() const { return conflation_hits_.load(std::memory_order_relaxed); }
+
 private:
     void init_common_strings();
 
@@ -84,6 +88,7 @@ private:
     std::unordered_map<uint32_t, std::shared_ptr<Element>> elements_;
     std::deque<double> rtt_history_;
     size_t max_history_ = 1000;
+    std::atomic<uint64_t> conflation_hits_{0};
 
     std::unordered_map<std::string, uint32_t> string_to_id_;
     std::unordered_map<uint32_t, std::string> id_to_string_;

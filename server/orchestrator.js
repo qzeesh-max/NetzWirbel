@@ -253,7 +253,7 @@ function startMarketDataSimulation() {
 
         let updates = [];
         for (let i = 0; i < tickers.length; ++i) {
-            if (Math.random() < 0.1) { // 10% chance to update each tick
+            if (true) { // 100% chance to update each tick (Stress Test)
                 let t = tickers[i];
                 t.last_px += (Math.random() * 100 - 50) / 100.0;
                 t.bid_px = t.last_px - 0.05;
@@ -276,7 +276,7 @@ function startMarketDataSimulation() {
                 }
             });
         }
-    }, 50); // 50ms interval
+    }, 5); // 5ms interval (Stress Test)
 }
 
 startMarketDataSimulation();

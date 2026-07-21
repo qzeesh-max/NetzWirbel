@@ -1555,6 +1555,7 @@ private:
                 md.row_ptr->get_cell(5)->set_text_content_conflated(std::to_string(md.lastSz));
                 md.row_ptr->get_cell(6)->set_text_content_conflated(format_px(md.lastPx));
                 md.row_ptr->get_cell(7)->set_text_content_conflated(std::to_string(md.volume));
+                md.row_ptr->update_data(md);
               }
               
               found = true;

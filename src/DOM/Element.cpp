@@ -269,6 +269,8 @@ void Element::set_text_content_conflated(const std::string& text) {
         cmd.target_id = id_;
         cmd.arg1 = reinterpret_cast<uint32_t>(&conflated_text_);
         ctx_->send_command(cmd);
+    } else {
+        ctx_->increment_conflation_hits();
     }
 }
 
