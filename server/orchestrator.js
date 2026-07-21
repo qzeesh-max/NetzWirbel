@@ -271,7 +271,7 @@ function startMarketDataSimulation() {
         if (updates.length > 0) {
             const payload = updates.join('\n');
             wss.clients.forEach(client => {
-                if (client.readyState === WebSocket.OPEN) {
+                if (client.readyState === WebSocket.OPEN && client.isMarketData) {
                     client.send(payload);
                 }
             });
@@ -385,6 +385,7 @@ wss.on('connection', (ws, req) => {
     }
 
     console.log('Client connected to WebSocket.');
+    ws.isMarketData = true;
     
     // Send initial snapshot
     let snapshot = tickers.map(t => `MD|${t.symbol}|${t.last_px.toFixed(2)}|${t.bid_px.toFixed(2)}|${t.ask_px.toFixed(2)}|${t.bid_size}|${t.ask_size}|${t.total_vol}`);
