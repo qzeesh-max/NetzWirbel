@@ -36,7 +36,7 @@ struct MarketDataTickerRow {
     double ask_px = 0;
     int ask_size = 0;
     double last_px = 0;
-    int total_vol = 0;
+    long long total_vol = 0;
 };
 
 class MarketDataApp : public App {
@@ -195,7 +195,7 @@ private:
                             tr.ask_px = std::stod(parts[3]);
                             tr.bid_size = std::stoi(parts[4]);
                             tr.ask_size = std::stoi(parts[5]);
-                            tr.total_vol = std::stoi(parts[6]);
+                            tr.total_vol = std::stoll(parts[6]);
 
                             auto row_ptr = tr.row_ptr;
                             if (row_ptr) {
