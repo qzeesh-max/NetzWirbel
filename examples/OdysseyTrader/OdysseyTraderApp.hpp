@@ -53,6 +53,7 @@ struct OdysseyMarketData {
   uint32_t lastSz;
   double lastPx;
   uint32_t volume;
+  std::shared_ptr<GridRow<OdysseyMarketData>> row_ptr;
 };
 
 struct OdysseyOrderData {
@@ -725,9 +726,9 @@ private:
 
   void rebuild_market_data_grid() {
     md_grid_->clear_rows();
-    for (const auto& md : market_data_) md_grid_->add_row(md);
+    for (auto& md : market_data_) md.row_ptr = md_grid_->add_row(md);
     md_grid_->apply_sort();
-}
+  }
 
   void rebuild_orders_grid() {
     order_grid_->clear_rows();
@@ -1545,6 +1546,17 @@ private:
               md.lastPx = msg.last_px;
               md.lastSz = msg.last_size;
               md.volume = msg.total_volume;
+              
+              if (md.row_ptr) {
+                md.row_ptr->get_cell(1)->set_text_content_conflated(std::to_string(md.bidSz));
+                md.row_ptr->get_cell(2)->set_text_content_conflated(format_px(md.bidPx));
+                md.row_ptr->get_cell(3)->set_text_content_conflated(format_px(md.askPx));
+                md.row_ptr->get_cell(4)->set_text_content_conflated(std::to_string(md.askSz));
+                md.row_ptr->get_cell(5)->set_text_content_conflated(std::to_string(md.lastSz));
+                md.row_ptr->get_cell(6)->set_text_content_conflated(format_px(md.lastPx));
+                md.row_ptr->get_cell(7)->set_text_content_conflated(std::to_string(md.volume));
+              }
+              
               found = true;
               break;
             }
@@ -1561,9 +1573,8 @@ private:
             md.lastSz = msg.last_size;
             md.volume = msg.total_volume;
             market_data_.push_back(md);
+            rebuild_market_data_grid();
           }
-
-          rebuild_market_data_grid();
         }
         break;
       }
@@ -1618,11 +1629,11 @@ private:
 
     std::stringstream ss;
     ss << "  Session: " << session_name_ << " (" << state_text << ")";
-    status_text->set_text_content(ss.str());
+    status_text->set_text_content_conflated(ss.str());
 
     std::stringstream seq;
     seq << "Seq: " << sender_seq_num_ << ":" << target_seq_num_;
-    seq_num_text->set_text_content(seq.str());
+    seq_num_text->set_text_content_conflated(seq.str());
 
     std::stringstream sb_style;
     sb_style

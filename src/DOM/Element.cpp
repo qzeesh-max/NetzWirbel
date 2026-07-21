@@ -250,6 +250,28 @@ void Element::set_property(uint32_t key_id, double value) {
     ctx_->send_command(cmd);
 }
 
+void Element::set_text_content_conflated(const std::string& text) {
+    char* new_ptr = static_cast<char*>(std::malloc(text.size() + 1));
+    if (new_ptr) std::strcpy(new_ptr, text.c_str());
+
+    uint64_t new_val = (static_cast<uint64_t>(text.size()) << 32) | static_cast<uint32_t>(reinterpret_cast<uintptr_t>(new_ptr));
+    uint64_t old_val = conflated_text_.ptr_and_len.exchange(new_val, std::memory_order_acq_rel);
+    
+    uint32_t old_ptr = static_cast<uint32_t>(old_val & 0xFFFFFFFF);
+    if (old_ptr != 0) {
+        std::free(reinterpret_cast<void*>(old_ptr));
+    }
+
+    uint32_t expected = 0;
+    if (conflated_text_.queued.compare_exchange_strong(expected, 1, std::memory_order_acq_rel)) {
+        Command cmd;
+        cmd.type = CommandType::SET_TEXT_CONTENT_CONFLATED;
+        cmd.target_id = id_;
+        cmd.arg1 = reinterpret_cast<uint32_t>(&conflated_text_);
+        ctx_->send_command(cmd);
+    }
+}
+
 void Element::set_text_content(const std::string& text) {
     char* text_ptr = new char[text.size() + 1];
     std::strcpy(text_ptr, text.c_str());

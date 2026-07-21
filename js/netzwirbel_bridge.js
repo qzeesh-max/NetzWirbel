@@ -145,7 +145,8 @@ class NetzWirbelBridge {
             FOCUS: 12,
             SELECT: 13,
             SET_NUMERIC_ONLY: 14,
-            SET_STYLES: 15
+            SET_STYLES: 15,
+            SET_TEXT_CONTENT_CONFLATED: 16
         };
         
         this.EVENT = {
@@ -300,6 +301,28 @@ class NetzWirbelBridge {
                 if (el) {
                     const text = this.readString(arg1, arg2);
                     el.textContent = text;
+                }
+                break;
+            }
+            case this.CMD.SET_TEXT_CONTENT_CONFLATED: {
+                const el = this.elements.get(targetId);
+                if (el) {
+                    const structPtr = arg1;
+                    
+                    // Allow C++ to queue a new command
+                    const heapU32 = new Uint32Array(this.memory.buffer);
+                    Atomics.store(heapU32, (structPtr / 4) + 2, 0); 
+                    
+                    // Atomically extract pointer and length (64-bit exchange)
+                    const heapU64 = new BigInt64Array(this.memory.buffer);
+                    const val = Atomics.exchange(heapU64, structPtr / 8, 0n);
+                    
+                    if (val !== 0n) {
+                        const len = Number(val >> 32n);
+                        const ptr = Number(val & 0xFFFFFFFFn);
+                        const text = this.readString(ptr, len);
+                        el.textContent = text;
+                    }
                 }
                 break;
             }

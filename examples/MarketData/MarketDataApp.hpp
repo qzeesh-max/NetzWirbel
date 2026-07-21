@@ -152,7 +152,7 @@ public:
                << " | Mode: " << format_price(stats.mode)
                << " | StdDev: " << format_price(stats.stddev)
                << " | p99: " << format_price(stats.p99);
-            g_stats_pane->set_text_content(ss.str());
+            g_stats_pane->set_text_content_conflated(ss.str());
             last_stats_time = time;
         }
     }
@@ -198,12 +198,12 @@ private:
 
                             auto row_ptr = tr.row_ptr;
                             if (row_ptr) {
-                                row_ptr->get_cell(1)->set_text_content(parts[4]);
-                                row_ptr->get_cell(2)->set_text_content(parts[2]);
-                                row_ptr->get_cell(3)->set_text_content(parts[3]);
-                                row_ptr->get_cell(4)->set_text_content(parts[5]);
-                                row_ptr->get_cell(5)->set_text_content(parts[1]);
-                                row_ptr->get_cell(6)->set_text_content(parts[6]);
+                                row_ptr->get_cell(1)->set_text_content_conflated(parts[4]);
+                                row_ptr->get_cell(2)->set_text_content_conflated(parts[2]);
+                                row_ptr->get_cell(3)->set_text_content_conflated(parts[3]);
+                                row_ptr->get_cell(4)->set_text_content_conflated(parts[5]);
+                                row_ptr->get_cell(5)->set_text_content_conflated(parts[1]);
+                                row_ptr->get_cell(6)->set_text_content_conflated(parts[6]);
 
                                 std::string color_class = (tr.last_px >= old_last) ? "md-cell md-up" : "md-cell md-down";
                                 row_ptr->get_cell(5)->set_attribute("class", color_class);

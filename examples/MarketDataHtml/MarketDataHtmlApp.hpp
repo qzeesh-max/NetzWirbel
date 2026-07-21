@@ -97,7 +97,7 @@ public:
                << " | Mode: " << format_price(stats.mode)
                << " | StdDev: " << format_price(stats.stddev)
                << " | p99: " << format_price(stats.p99);
-            g_stats_pane->set_text_content(ss.str());
+            g_stats_pane->set_text_content_conflated(ss.str());
             last_stats_time = time;
         }
     }
@@ -133,12 +133,12 @@ private:
                             double old_last = tr.last_px;
                             tr.last_px = std::stod(parts[1]);
 
-                            tr.bid_sz_el->set_text_content(parts[4]);
-                            tr.bid_px_el->set_text_content(parts[2]);
-                            tr.ask_px_el->set_text_content(parts[3]);
-                            tr.ask_sz_el->set_text_content(parts[5]);
-                            tr.last_px_el->set_text_content(parts[1]);
-                            tr.vol_el->set_text_content(parts[6]);
+                            tr.bid_sz_el->set_text_content_conflated(parts[4]);
+                            tr.bid_px_el->set_text_content_conflated(parts[2]);
+                            tr.ask_px_el->set_text_content_conflated(parts[3]);
+                            tr.ask_sz_el->set_text_content_conflated(parts[5]);
+                            tr.last_px_el->set_text_content_conflated(parts[1]);
+                            tr.vol_el->set_text_content_conflated(parts[6]);
 
                             std::string color = (tr.last_px >= old_last) ? "#00ff00" : "#ff4444";
                             tr.last_px_el->set_style("color", color);

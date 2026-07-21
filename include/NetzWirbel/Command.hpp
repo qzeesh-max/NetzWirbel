@@ -35,7 +35,8 @@ enum class CommandType : uint32_t {
     FOCUS = 12,
     SELECT = 13,
     SET_NUMERIC_ONLY = 14,
-    SET_STYLES = 15
+    SET_STYLES = 15,
+    SET_TEXT_CONTENT_CONFLATED = 16
 };
 
 // Represents a command from C++ to JS

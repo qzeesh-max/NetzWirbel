@@ -22,11 +22,18 @@
 #include <initializer_list>
 #include <memory>
 #include <unordered_map>
+#include <vector>
 #include <functional>
+#include <atomic>
 
 namespace NetzWirbel {
 
 class Context;
+
+struct alignas(8) ConflatedText {
+    std::atomic<uint64_t> ptr_and_len{0}; // high 32: length, low 32: pointer
+    std::atomic<uint32_t> queued{0};
+};
 
 class Element : public std::enable_shared_from_this<Element> {
 public:
@@ -62,6 +69,7 @@ public:
 
     void set_text_content(const std::string& text);
     void set_text_content(uint32_t text_id);
+    void set_text_content_conflated(const std::string& text);
 
     virtual void append_child(std::shared_ptr<Element> child);
     virtual void remove_child(std::shared_ptr<Element> child);
@@ -82,6 +90,9 @@ protected:
     Context* ctx_;
     uint32_t id_;
     std::string tag_name_;
+    std::string text_content_;
+    
+    ConflatedText conflated_text_;
     std::unordered_map<std::string, std::vector<std::function<void(const Event&)>>> event_listeners_;
     std::vector<std::shared_ptr<Element>> children_;
     Element* parent_ = nullptr;
