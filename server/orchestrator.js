@@ -74,10 +74,16 @@ app.get('/', (req, res) => {
                 const isNative = NATIVE_BACKENDS.includes(ex);
                 const hasHtml = fs.existsSync(path.join(__dirname, '..', 'build', 'examples', ex, 'index.html'));
                 const hasWasm = fs.existsSync(path.join(__dirname, '..', 'build', 'examples', ex, ex + '.js'));
-                if (isNative) {
-                    return `<li><a href="/run/${ex}">${ex}<span class="native-badge">Native Backend</span></a></li>`;
+                
+                let warning = '';
+                if (ex.includes('MarketData')) {
+                    warning = `<div style="font-size: 0.85em; color: #ffeb3b; margin-top: 4px; padding-left: 4px;">⚠️ <strong>Note:</strong> This example streams high-frequency data from the server to demonstrate the efficiency of the lock-free conflation mechanism. It may consume significant network bandwidth while running.</div>`;
                 }
-                return `<li><a href="${hasHtml ? `/build/examples/${ex}/index.html` : `/run/${ex}`}">${ex}</a></li>`;
+                
+                if (isNative) {
+                    return `<li style="margin-bottom: 1.5rem;"><a href="/run/${ex}">${ex}<span class="native-badge">Native Backend</span></a>${warning}</li>`;
+                }
+                return `<li style="margin-bottom: 1.5rem;"><a href="${hasHtml ? `/build/examples/${ex}/index.html` : `/run/${ex}`}">${ex}</a>${warning}</li>`;
             }).join('')}
             ${examples.length === 0 ? '<li>No examples built yet. Run cmake and make.</li>' : ''}
         </ul>

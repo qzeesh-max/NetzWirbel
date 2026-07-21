@@ -1,5 +1,8 @@
 # Tutorial 4: The Market Data Example
 
+> [!WARNING]
+> **High Bandwidth Usage:** This example streams simulated high-frequency market data from the server to demonstrate the extreme performance and efficiency of NetzWirbel's lock-free conflation mechanism. It may consume significant network bandwidth while running.
+
 NetzWirbel is well-suited for high-frequency updates, such as rendering live financial market data. The `MarketData` example demonstrates this by rendering a grid of tickers and updating them dynamically via a WebSocket stream.
 
 ## 1. Initializing the UI Grid
