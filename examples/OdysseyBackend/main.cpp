@@ -581,10 +581,21 @@ bool handle_client_data(const std::shared_ptr<ClientConnection>& client) {
                     const auto &req = reinterpret_cast<const NetMsg<MDRequestMsg>*>(data)->payload;
                     std::string sym = req.symbol;
                     if (req.sub_type == 0) {
-                        client->subscriptions.insert(sym);
-                        std::cout << "User '" << client->username << "' subscribed to " << sym << std::endl;
-                        // Immediately broadcast snapshot to this client
-                        broadcast_market_data(sym);
+                        const Market* mkt = g_matcher.getMarket(sym);
+                        if (!mkt) {
+                            NetMsg<MDRejectMsg> rej;
+                            rej.header.type = htons(static_cast<uint16_t>(MsgType::MDReject));
+                            rej.header.length = htonl(sizeof(rej));
+                            strncpy_safe(rej.payload.symbol, sym.c_str(), sizeof(rej.payload.symbol));
+                            strncpy_safe(rej.payload.reason, "Invalid symbol", sizeof(rej.payload.reason));
+                            send_buffer(client->fd, &rej, sizeof(rej));
+                            std::cout << "User '" << client->username << "' requested invalid symbol " << sym << std::endl;
+                        } else {
+                            client->subscriptions.insert(sym);
+                            std::cout << "User '" << client->username << "' subscribed to " << sym << std::endl;
+                            // Immediately broadcast snapshot to this client
+                            broadcast_market_data(sym);
+                        }
                     } else {
                         client->subscriptions.erase(sym);
                         std::cout << "User '" << client->username << "' unsubscribed from " << sym << std::endl;

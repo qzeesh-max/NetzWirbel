@@ -54,6 +54,7 @@ struct OdysseyMarketData {
   double lastPx;
   uint32_t volume;
   std::shared_ptr<GridRow<OdysseyMarketData>> row_ptr;
+  bool is_invalid = false;
 };
 
 struct OdysseyOrderData {
@@ -201,13 +202,26 @@ private:
         ss << ", \"" << key << "\": {\"x\": " << w->get_x() 
            << ", \"y\": " << w->get_y()
            << ", \"w\": " << w->get_width()
-           << ", \"h\": " << w->get_height() << "}";
+           << ", \"h\": " << w->get_height()
+           << ", \"maximized\": " << (w->is_maximized() ? "true" : "false")
+           << ", \"minimized\": " << (w->is_minimized() ? "true" : "false") << "}";
     };
     append_win("market_data", md_win_);
     append_win("orders", orders_win_);
     append_win("executions", exec_win_);
     append_win("rejections", rej_win_);
     append_win("preferences", pref_win_);
+    
+    ss << ", \"market_data_symbols\": [";
+    bool first = true;
+    for (const auto& m : market_data_) {
+        if (!m.symbol.empty()) {
+            if (!first) ss << ", ";
+            ss << "\"" << m.symbol << "\"";
+            first = false;
+        }
+    }
+    ss << "]";
     
     ss << "}";
 
@@ -261,6 +275,30 @@ private:
             int width = extract_json_int(layout_json, pos, "w", w->get_width());
             int height = extract_json_int(layout_json, pos, "h", w->get_height());
             w->set_bounds(x, y, width, height);
+            
+            size_t max_pos = layout_json.find("\"maximized\"", pos);
+            if (max_pos != std::string::npos) {
+                size_t colon_pos = layout_json.find(":", max_pos);
+                if (colon_pos != std::string::npos) {
+                    if (layout_json.find("true", colon_pos) != std::string::npos && layout_json.find("true", colon_pos) < layout_json.find_first_of(",}", colon_pos)) {
+                        w->set_maximized(true);
+                    } else {
+                        w->set_maximized(false);
+                    }
+                }
+            }
+            
+            size_t min_pos = layout_json.find("\"minimized\"", pos);
+            if (min_pos != std::string::npos) {
+                size_t colon_pos = layout_json.find(":", min_pos);
+                if (colon_pos != std::string::npos) {
+                    if (layout_json.find("true", colon_pos) != std::string::npos && layout_json.find("true", colon_pos) < layout_json.find_first_of(",}", colon_pos)) {
+                        w->set_minimized(true);
+                    } else {
+                        w->set_minimized(false);
+                    }
+                }
+            }
         }
     };
     extract_win("market_data", md_win_);
@@ -268,6 +306,42 @@ private:
     extract_win("executions", exec_win_);
     extract_win("rejections", rej_win_);
     extract_win("preferences", pref_win_);
+    
+    size_t syms_pos = layout_json.find("\"market_data_symbols\"");
+    if (syms_pos != std::string::npos) {
+        size_t bracket_start = layout_json.find("[", syms_pos);
+        size_t bracket_end = layout_json.find("]", bracket_start);
+        if (bracket_start != std::string::npos && bracket_end != std::string::npos) {
+            std::string arr = layout_json.substr(bracket_start + 1, bracket_end - bracket_start - 1);
+            
+            for (const auto& m : market_data_) {
+                if (!m.symbol.empty()) unsubscribe_symbol(m.symbol);
+            }
+            market_data_.clear();
+            
+            size_t i = 0;
+            while (i < arr.size()) {
+                size_t q1 = arr.find("\"", i);
+                if (q1 == std::string::npos) break;
+                size_t q2 = arr.find("\"", q1 + 1);
+                if (q2 == std::string::npos) break;
+                std::string sym = arr.substr(q1 + 1, q2 - q1 - 1);
+                
+                OdysseyMarketData md;
+                md.symbol = sym;
+                md.bidPx = 0; md.bidSz = 0; md.askPx = 0; md.askSz = 0;
+                md.lastPx = 0; md.lastSz = 0; md.volume = 0; md.is_invalid = false;
+                market_data_.push_back(md);
+                
+                subscribe_symbol(sym);
+                
+                i = q2 + 1;
+            }
+            
+            market_data_.push_back(OdysseyMarketData{"", 0, 0, 0, 0, 0, 0, 0, nullptr, false});
+            rebuild_market_data_grid();
+        }
+    }
 }
 
   int extract_json_int(const std::string &json, size_t offset,
@@ -376,14 +450,7 @@ private:
         add_taskbar_btn(pref_win_, "Prefs");
     };
 
-    auto set_min_cb = [&](std::shared_ptr<Window> w) {
-        if (w) w->set_on_minimize([update_taskbar](bool) { update_taskbar(); });
-    };
-    set_min_cb(md_win_);
-    set_min_cb(orders_win_);
-    set_min_cb(exec_win_);
-    set_min_cb(rej_win_);
-    set_min_cb(pref_win_);
+    // removed set_min_cb
     
     md_win_->set_close_button_hidden(true);
     orders_win_->set_close_button_hidden(true);
@@ -462,42 +529,16 @@ private:
 
 
     auto save_cb = [this](int, int) { save_layout(); };
-    md_win_->set_on_move(save_cb); md_win_->set_on_resize(save_cb);
-    orders_win_->set_on_move(save_cb); orders_win_->set_on_resize(save_cb);
-    exec_win_->set_on_move(save_cb); exec_win_->set_on_resize(save_cb);
-    rej_win_->set_on_move(save_cb); rej_win_->set_on_resize(save_cb);
-    pref_win_->set_on_move(save_cb); pref_win_->set_on_resize(save_cb);
+    auto state_cb = [this, update_taskbar](bool) { update_taskbar(); save_layout(); };
+    md_win_->set_on_move(save_cb); md_win_->set_on_resize(save_cb); md_win_->set_on_minimize(state_cb); md_win_->set_on_maximize(state_cb);
+    orders_win_->set_on_move(save_cb); orders_win_->set_on_resize(save_cb); orders_win_->set_on_minimize(state_cb); orders_win_->set_on_maximize(state_cb);
+    exec_win_->set_on_move(save_cb); exec_win_->set_on_resize(save_cb); exec_win_->set_on_minimize(state_cb); exec_win_->set_on_maximize(state_cb);
+    rej_win_->set_on_move(save_cb); rej_win_->set_on_resize(save_cb); rej_win_->set_on_minimize(state_cb); rej_win_->set_on_maximize(state_cb);
+    pref_win_->set_on_move(save_cb); pref_win_->set_on_resize(save_cb); pref_win_->set_on_minimize(state_cb); pref_win_->set_on_maximize(state_cb);
 
 
     auto md_cont = md_win_->get_content_container();
     md_cont->set_attribute(ctx_->strings.style, "padding: 0px; flex-grow: 1; min-height: 0; box-sizing: border-box; overflow: auto; display: flex; flex-direction: column;");
-
-    auto add_pnl = std::make_shared<HTMLDivElement>(ctx_);
-    ctx_->register_element(add_pnl);
-    add_pnl->set_attribute(ctx_->strings.style, "display: flex; gap: 8px; margin: 12px; flex-shrink: 0;");
-    md_cont->append_child(add_pnl);
-
-    auto add_input = std::make_shared<HTMLInputElement>(ctx_);
-    ctx_->register_element(add_input);
-    add_input->set_attribute(ctx_->strings.placeholder, "Symbol (e.g. LNUX)");
-    add_input->set_attribute(ctx_->strings.style, "flex: 1; padding: 6px 12px; border-radius: 6px; user-select: auto; -webkit-user-select: auto; border: 1px solid #ccc; font-size: 13px; user-select: auto; -webkit-user-select: auto;");
-    add_pnl->append_child(add_input);
-
-    auto add_btn = std::make_shared<Button>(ctx_);
-    ctx_->register_element(add_btn);
-    add_btn->set_text("Add Symbol");
-    add_btn->set_color("#1a237e");
-    add_btn->set_text_color("white");
-    add_btn->set_extra_style("font-size: 13px; font-weight: bold; border-radius: 6px;");
-    add_btn->add_event_listener(ctx_->strings.click, [this, add_input](const Event &e) {
-        std::string sym = add_input->get_value();
-        std::transform(sym.begin(), sym.end(), sym.begin(), ::toupper);
-        if (!sym.empty() && !subscribed_symbols_.count(sym)) {
-            subscribe_symbol(sym);
-            add_input->set_value("");
-        }
-    });
-    add_pnl->append_child(add_btn);
 
     md_grid_ = std::make_shared<Grid<OdysseyMarketData>>(ctx_);
     md_grid_->add_column("Symbol", 80);
@@ -520,14 +561,118 @@ private:
     md_grid_->add_column("Last", 80);
     md_grid_->add_column("Tot Volume", 90);
     md_grid_->set_on_render_row([this](std::shared_ptr<GridRow<OdysseyMarketData>> row, const OdysseyMarketData& data) {
-        row->add_cell(data.symbol, md_grid_->get_col_width(0), "Symbol");
-        row->add_cell(std::to_string(data.bidSz), md_grid_->get_col_width(1), "Bid Size");
-        row->add_cell(format_px(data.bidPx), md_grid_->get_col_width(2), "Bid");
-        row->add_cell(format_px(data.askPx), md_grid_->get_col_width(3), "Ask");
-        row->add_cell(std::to_string(data.askSz), md_grid_->get_col_width(4), "Ask Size");
-        row->add_cell(std::to_string(data.lastSz), md_grid_->get_col_width(5), "Trd Volume");
-        row->add_cell(format_px(data.lastPx), md_grid_->get_col_width(6), "Last");
-        row->add_cell(std::to_string(data.volume), md_grid_->get_col_width(7), "Tot Volume");
+        row->add_cell("", md_grid_->get_col_width(0), "Symbol");
+        
+        auto cell = row->get_cell(0);
+        cell->set_attribute("style", "padding: 0; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; user-select: none; width: " + std::to_string(md_grid_->get_col_width(0)) + "px; min-width: " + std::to_string(md_grid_->get_col_width(0)) + "px; max-width: " + std::to_string(md_grid_->get_col_width(0)) + "px;");
+        
+        auto input = std::make_shared<HTMLInputElement>(ctx_);
+        ctx_->register_element(input);
+        input->set_value(data.symbol);
+        input->set_attribute(ctx_->strings.style, "width: 100%; height: 100%; padding: 6px; border: none; background: transparent; outline: none; font-size: inherit; font-family: inherit; text-transform: uppercase; box-sizing: border-box;");
+        cell->append_child(input);
+        
+        auto handle_edit = [this, row, input]() {
+            std::string new_sym = input->get_value();
+            std::transform(new_sym.begin(), new_sym.end(), new_sym.begin(), ::toupper);
+            std::string old_sym = row->get_data().symbol;
+            
+            if (new_sym == old_sym) {
+                input->set_value(old_sym);
+                return;
+            }
+            
+            if (new_sym.empty()) {
+                if (!old_sym.empty()) {
+                    int count = 0;
+                    for (const auto& m : market_data_) {
+                        if (m.symbol == old_sym) count++;
+                    }
+                    if (count <= 1) unsubscribe_symbol(old_sym);
+                }
+                for (auto it = market_data_.begin(); it != market_data_.end(); ++it) {
+                    if (it->row_ptr.get() == row.get()) {
+                        market_data_.erase(it);
+                        break;
+                    }
+                }
+                rebuild_market_data_grid();
+                save_layout();
+            } else {
+                if (!old_sym.empty()) {
+                    int count = 0;
+                    for (const auto& m : market_data_) {
+                        if (m.symbol == old_sym) count++;
+                    }
+                    if (count <= 1) unsubscribe_symbol(old_sym);
+                }
+                
+                auto md = row->get_data();
+                md.symbol = new_sym;
+                md.is_invalid = false;
+                row->update_data(md);
+                
+                for (auto &m : market_data_) {
+                    if (m.row_ptr.get() == row.get()) {
+                        m.symbol = new_sym;
+                        m.is_invalid = false;
+                        break;
+                    }
+                }
+                
+                subscribe_symbol(new_sym);
+                
+                bool has_empty = false;
+                for (const auto& m : market_data_) {
+                    if (m.symbol.empty()) has_empty = true;
+                }
+                if (!has_empty) {
+                    market_data_.push_back(OdysseyMarketData{"", 0, 0, 0, 0, 0, 0, 0, nullptr, false});
+                    rebuild_market_data_grid();
+                }
+                save_layout();
+            }
+        };
+        
+        input->add_event_listener("focus", [input](const Event& e) {
+            input->set_style_conflated("box-shadow", "inset 0 0 0 2px darkslateblue");
+        });
+        
+        input->add_event_listener("blur", [handle_edit, input](const Event& e) {
+            input->set_style_conflated("box-shadow", "none");
+            handle_edit();
+        });
+        
+        input->add_event_listener("keydown", [handle_edit](const Event& e) {
+            auto* ke = dynamic_cast<const KeyboardEvent*>(&e);
+            if (ke && ke->get_key() == "Enter") {
+                handle_edit();
+            }
+        });
+        
+        if (data.is_invalid) {
+            auto invalid_cell = std::make_shared<HTMLDivElement>(ctx_);
+            ctx_->register_element(invalid_cell);
+            invalid_cell->set_text_content("Symbol is invalid - enter order and try again");
+            invalid_cell->set_attribute(ctx_->strings.style, "padding: 6px; flex: 1; color: red; font-weight: bold; overflow: hidden; white-space: nowrap; user-select: none; border: 2px solid red; text-align:center;");
+            row->append_child(invalid_cell);
+        } else if (data.symbol.empty()) {
+            row->add_cell("", md_grid_->get_col_width(1));
+            row->add_cell("", md_grid_->get_col_width(2));
+            row->add_cell("", md_grid_->get_col_width(3));
+            row->add_cell("", md_grid_->get_col_width(4));
+            row->add_cell("", md_grid_->get_col_width(5));
+            row->add_cell("", md_grid_->get_col_width(6));
+            row->add_cell("", md_grid_->get_col_width(7));
+        } else {
+            row->add_cell(std::to_string(data.bidSz), md_grid_->get_col_width(1), "Bid Size");
+            row->add_cell(format_px(data.bidPx), md_grid_->get_col_width(2), "Bid");
+            row->add_cell(format_px(data.askPx), md_grid_->get_col_width(3), "Ask");
+            row->add_cell(std::to_string(data.askSz), md_grid_->get_col_width(4), "Ask Size");
+            row->add_cell(std::to_string(data.lastSz), md_grid_->get_col_width(5), "Trd Volume");
+            row->add_cell(format_px(data.lastPx), md_grid_->get_col_width(6), "Last");
+            row->add_cell(std::to_string(data.volume), md_grid_->get_col_width(7), "Tot Volume");
+        }
     });
     md_cont->append_child(md_grid_);
     md_grid_->set_on_cell_double_click([this](auto row, const std::string& col) {
@@ -1280,7 +1425,30 @@ private:
     send_binary_msg(&msg, sizeof(msg));
   }
 
+  void unsubscribe_symbol(const std::string &sym) {
+    if (sym.empty()) return;
+    subscribed_symbols_.erase(sym);
+
+    NetMsg<MDRequestMsg> msg;
+    msg.header.type = htons(static_cast<uint16_t>(MsgType::MDRequest));
+    msg.header.length = htonl(sizeof(msg));
+    strncpy_safe(msg.payload.symbol, sym.c_str(), sizeof(msg.payload.symbol));
+    msg.payload.sub_type = 1;
+    send_binary_msg(&msg, sizeof(msg));
+  }
+
+  void remove_symbol(const std::string &sym) {
+    if (!sym.empty()) unsubscribe_symbol(sym);
+    auto it = std::remove_if(market_data_.begin(), market_data_.end(),
+                             [&](const OdysseyMarketData& md) { return md.symbol == sym; });
+    if (it != market_data_.end()) {
+      market_data_.erase(it, market_data_.end());
+      rebuild_market_data_grid();
+    }
+  }
+
   void subscribe_symbol(const std::string &sym) {
+    if (sym.empty()) return;
     subscribed_symbols_.insert(sym);
 
     NetMsg<MDRequestMsg> msg;
@@ -1368,6 +1536,15 @@ private:
             subscribe_symbol("LNUX");
             subscribe_symbol("YHOO");
             subscribe_symbol("CSCO");
+            
+            bool has_empty = false;
+            for (const auto& m : market_data_) {
+                if (m.symbol.empty()) has_empty = true;
+            }
+            if (!has_empty) {
+                market_data_.push_back(OdysseyMarketData{"", 0, 0, 0, 0, 0, 0, 0, nullptr, false});
+                rebuild_market_data_grid();
+            }
           }
         }
         break;
@@ -1558,20 +1735,22 @@ private:
               md.lastPx = msg.last_px;
               md.lastSz = msg.last_size;
               md.volume = msg.total_volume;
+              md.is_invalid = false;
               
               if (md.row_ptr) {
-                md.row_ptr->get_cell(1)->set_text_content_conflated(std::to_string(md.bidSz));
-                md.row_ptr->get_cell(2)->set_text_content_conflated(format_px(md.bidPx));
-                md.row_ptr->get_cell(3)->set_text_content_conflated(format_px(md.askPx));
-                md.row_ptr->get_cell(4)->set_text_content_conflated(std::to_string(md.askSz));
-                md.row_ptr->get_cell(5)->set_text_content_conflated(std::to_string(md.lastSz));
-                md.row_ptr->get_cell(6)->set_text_content_conflated(format_px(md.lastPx));
-                md.row_ptr->get_cell(7)->set_text_content_conflated(std::to_string(md.volume));
+                if (md.row_ptr->get_cell(1)) {
+                  md.row_ptr->get_cell(1)->set_text_content_conflated(std::to_string(md.bidSz));
+                  md.row_ptr->get_cell(2)->set_text_content_conflated(format_px(md.bidPx));
+                  md.row_ptr->get_cell(3)->set_text_content_conflated(format_px(md.askPx));
+                  md.row_ptr->get_cell(4)->set_text_content_conflated(std::to_string(md.askSz));
+                  md.row_ptr->get_cell(5)->set_text_content_conflated(std::to_string(md.lastSz));
+                  md.row_ptr->get_cell(6)->set_text_content_conflated(format_px(md.lastPx));
+                  md.row_ptr->get_cell(7)->set_text_content_conflated(std::to_string(md.volume));
+                }
                 md.row_ptr->update_data(md);
               }
               
               found = true;
-              break;
             }
           }
 
@@ -1585,9 +1764,51 @@ private:
             md.lastPx = msg.last_px;
             md.lastSz = msg.last_size;
             md.volume = msg.total_volume;
-            market_data_.push_back(md);
+            md.is_invalid = false;
+            
+            // Insert before the empty row if it exists
+            bool inserted = false;
+            for (auto it = market_data_.begin(); it != market_data_.end(); ++it) {
+                if (it->symbol.empty()) {
+                    market_data_.insert(it, md);
+                    inserted = true;
+                    break;
+                }
+            }
+            if (!inserted) {
+                market_data_.push_back(md);
+            }
             rebuild_market_data_grid();
           }
+        }
+        break;
+      }
+      case MsgType::MDReject: {
+        const auto& msg = reinterpret_cast<const NetMsg<MDRejectMsg>*>(data)->payload;
+        if (length >= sizeof(msg)) {
+            std::string sym = msg.symbol;
+            bool found = false;
+            for (auto &md : market_data_) {
+                if (md.symbol == sym) {
+                    md.is_invalid = true;
+                    found = true;
+                }
+            }
+            if (!found) {
+                OdysseyMarketData md;
+                md.symbol = sym;
+                md.is_invalid = true;
+                bool inserted = false;
+                for (auto it = market_data_.begin(); it != market_data_.end(); ++it) {
+                    if (it->symbol.empty()) {
+                        market_data_.insert(it, md);
+                        inserted = true;
+                        break;
+                    }
+                }
+                if (!inserted) market_data_.push_back(md);
+            }
+            rebuild_market_data_grid();
         }
         break;
       }

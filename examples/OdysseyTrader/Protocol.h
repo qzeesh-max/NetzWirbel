@@ -29,7 +29,8 @@ enum class MsgType : uint16_t {
     MDRequest = 8,
     MDUpdate = 9,
     LogonState = 10,
-    Heartbeat = 11
+    Heartbeat = 11,
+    MDReject = 12
 };
 
 struct alignas(16) MsgHeader {
@@ -109,6 +110,11 @@ struct CancelRejectMsg {
 struct MDRequestMsg {
     uint8_t sub_type = 0; // 0 = Subscribe, 1 = Unsubscribe
     char symbol[16] = {0};
+};
+
+struct MDRejectMsg {
+    char symbol[16] = {0};
+    char reason[64] = {0};
 };
 
 struct MDUpdateMsg {

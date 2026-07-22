@@ -388,6 +388,7 @@ void Window::set_maximized(bool maximized) {
     } else {
         std::static_pointer_cast<Button>(btn_max_)->set_icon("□");
     }
+    if (on_maximize_) on_maximize_(maximized_);
 }
 
 void Window::set_minimize_button_enabled(bool enabled) { std::static_pointer_cast<Button>(btn_min_)->set_disabled(!enabled); }

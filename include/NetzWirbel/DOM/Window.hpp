@@ -44,6 +44,7 @@ public:
     void set_minimized(bool minimized);
     void set_hide_on_minimize(bool hide) { hide_on_minimize_ = hide; }
     void set_on_minimize(std::function<void(bool)> cb) { on_minimize_ = cb; }
+    void set_on_maximize(std::function<void(bool)> cb) { on_maximize_ = cb; }
     bool is_minimized() const { return minimized_; }
     
     void set_maximized(bool maximized);
@@ -107,6 +108,7 @@ private:
     std::function<void(int, int)> on_resize_;
     std::function<void()> on_close_;
     std::function<void(bool)> on_minimize_;
+    std::function<void(bool)> on_maximize_;
 
     static int global_z_index_;
     

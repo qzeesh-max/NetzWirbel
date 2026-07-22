@@ -69,6 +69,7 @@ A draggable, resizable window container component.
   - `void set_on_move(std::function<void(int, int)> cb)`
   - `void set_on_resize(std::function<void(int, int)> cb)`
   - `void set_on_minimize(std::function<void(bool)> cb)`
+  - `void set_on_maximize(std::function<void(bool)> cb)`
   - `void set_on_close(std::function<void()> cb)`
 - **Getters**: `get_x()`, `get_y()`, `get_width()`, `get_height()`, `get_z_index()`
 
