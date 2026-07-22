@@ -122,6 +122,7 @@ private:
 
   // UI elements
   std::shared_ptr<HTMLDivElement> main_div;
+  std::shared_ptr<HTMLDivElement> desktop_div;
   std::shared_ptr<HTMLDivElement> status_bar;
   std::shared_ptr<Element> status_light;
   std::shared_ptr<Element> status_text;
@@ -389,7 +390,12 @@ private:
   }
 
   void init_windows() {
-    Window::attach_manager(main_div, ctx_);
+    desktop_div = std::make_shared<HTMLDivElement>(ctx_);
+    ctx_->register_element(desktop_div);
+    desktop_div->set_attribute(ctx_->strings.style, "flex-grow: 1; position: relative; overflow: hidden;");
+    main_div->append_child(desktop_div);
+
+    Window::attach_manager(desktop_div, ctx_);
     
     md_win_ = std::make_shared<Window>(ctx_, "market_data", "Market Data Grid", 50, 50, 600, 350);
     orders_win_ = std::make_shared<Window>(ctx_, "orders", "Orders & Workspaces", 680, 50, 700, 350);
@@ -409,11 +415,11 @@ private:
     rej_win_->set_destroy_on_close(false);
     pref_win_->set_destroy_on_close(false);
 
-    main_div->append_child(md_win_);
-    main_div->append_child(orders_win_);
-    main_div->append_child(exec_win_);
-    main_div->append_child(rej_win_);
-    main_div->append_child(pref_win_);
+    desktop_div->append_child(md_win_);
+    desktop_div->append_child(orders_win_);
+    desktop_div->append_child(exec_win_);
+    desktop_div->append_child(rej_win_);
+    desktop_div->append_child(pref_win_);
 
     md_win_->set_visible(false);
     orders_win_->set_visible(false);
@@ -517,6 +523,12 @@ private:
     reset_btn->set_text_content(ctx_->register_string("Reset Window Positions"));
     reset_btn->set_attribute(ctx_->strings.style, "background: #f44336; color: white; border: none; padding: 6px; font-size: 12px; border-radius: 4px; cursor: pointer; margin-top: 10px; font-weight: bold;");
     reset_btn->add_event_listener(ctx_->strings.click, [this](const Event&) {
+        // Un-maximize windows
+        md_win_->set_maximized(false);
+        orders_win_->set_maximized(false);
+        exec_win_->set_maximized(false);
+        rej_win_->set_maximized(false);
+        pref_win_->set_maximized(false);
         // Reset positions
         md_win_->set_bounds(50, 50, 600, 500);
         orders_win_->set_bounds(680, 50, 700, 350);
@@ -1876,8 +1888,8 @@ private:
         << "background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(10px); "
         << "color: #333; padding: 10px 20px; border-bottom: 1px solid "
            "rgba(255,255,255,0.4); "
-        << "font-family: monospace; font-size: 13px; z-index: 1000; position: "
-           "absolute; top: 0; left: 0; right: 0;";
+        << "font-family: monospace; font-size: 13px; z-index: 1000; "
+        << "flex-shrink: 0;";
     status_bar->set_attribute(ctx_->strings.style, sb_style.str());
   }
 
@@ -1911,7 +1923,7 @@ public:
         "background-size: cover; width: 100vw; height: 100vh; position: "
         "absolute; "
         "left: 0; top: 0; overflow: hidden; margin: 0; padding: 0; box-sizing: "
-        "border-box;");
+        "border-box; display: flex; flex-direction: column;");
 
     // Top Status Bar (Hidden until logon)
     status_bar = std::make_shared<HTMLDivElement>(ctx);
