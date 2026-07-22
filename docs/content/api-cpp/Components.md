@@ -94,3 +94,57 @@ A row within a `Grid<T>`.
 - **`void update_data(const T& data)`**: Updates the underlying data object associated with the row.
 - **`T get_data() const`**: Retrieves the row's data object.
 - **`void set_on_double_click(std::function<void(GridRow<T>*, const std::string&)> cb)`**: Sets the internal double-click handler.
+
+## Menus
+A powerful suite of components for creating traditional desktop-like menu systems.
+
+### `MenuBar`
+The top-level container for application menus.
+- **Constructor**: `MenuBar(Context* ctx)`
+- **`void add_menu(const std::string& title, std::shared_ptr<Menu> menu)`**: Attaches a dropdown menu to the menu bar.
+
+### `Menu`
+A dropdown menu or submenu.
+- **Constructor**: `Menu(Context* ctx)`
+- **`void add_item(std::shared_ptr<MenuItem> item)`**: Appends an item to the menu.
+- **`void add_submenu(std::shared_ptr<Menu> submenu)`**: Registers a nested submenu.
+- **`void show_at(int x, int y)`**: Manually positions and displays the menu (often used for context menus).
+
+### `ContextMenu`
+A specialized menu designed to appear at the mouse cursor location when a user right-clicks.
+- **Constructor**: `ContextMenu(Context* ctx)`
+- **`void attach_to(std::shared_ptr<Element> target)`**: Attaches the context menu to the specified DOM element to automatically handle right-click events.
+
+### `MenuItem`
+An individual action item inside a `Menu`.
+- **Constructor**: `MenuItem(Context* ctx, const std::string& text, const std::string& icon = "", const std::string& accelerator = "", bool is_breaker = false)`
+- **`void set_on_click(std::function<void()> cb)`**: Sets the click event handler.
+- **`void set_submenu(std::shared_ptr<Menu> submenu)`**: Attaches a submenu to this item, which opens on hover.
+
+## `Toolbar`
+A horizontal or vertical container for quick-access action buttons.
+- **Constructor**: `Toolbar(Context* ctx)`
+- **`static std::shared_ptr<Toolbar> createFromTemplate(Context* ctx, const ToolbarConfig& config)`**: Factory method to generate a populated toolbar quickly.
+- **`void add_button(std::shared_ptr<ToolbarButton> button)`**: Appends a button.
+
+### `ToolbarButton`
+A compact button inside a `Toolbar`.
+- **Constructor**: `ToolbarButton(Context* ctx, const std::string& icon, const std::string& tooltip)`
+
+## `StatusBar`
+A bottom-aligned container for displaying application state and metrics.
+- **Constructor**: `StatusBar(Context* ctx)`
+- **`void add_panel(std::shared_ptr<StatusBarPanel> panel)`**: Appends a panel.
+
+### `StatusBarPanel`
+An individual section inside the `StatusBar`.
+- **Constructor**: `StatusBarPanel(Context* ctx, BevelStyle style = BevelStyle::None)`
+- **`void set_bevel_style(BevelStyle style)`**: Alters the visual inset/outset appearance.
+
+## `TabContainer`
+A container for managing multiple tabbed views.
+- **Constructor**: `TabContainer(Context* ctx)`
+- **`void add_tab(const std::string& title, std::shared_ptr<Element> content)`**: Creates a new tab linked to the provided content element.
+- **`void select_tab(size_t index)`**: Programmatically switches to a tab.
+- **`void set_on_state_change(std::function<void(size_t)> cb)`**: Handler triggered when the active tab changes.
+- **`bool handle_accelerator(const std::string& key, uint8_t modifiers)`**: Intercepts `Alt+Number` globally to switch tabs.
