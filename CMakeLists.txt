@@ -16,6 +16,10 @@ add_library(NetzWirbel STATIC
     src/DOM/TextBox.cpp
     src/DOM/TextArea.cpp
     src/DOM/RichTextArea.cpp
+    src/DOM/Menu.cpp
+    src/DOM/Toolbar.cpp
+    src/DOM/StatusBar.cpp
+    src/DOM/TabContainer.cpp
     src/Network.cpp
     src/App.cpp
 )

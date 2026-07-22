@@ -42,6 +42,7 @@ public:
     bool is_visible() const { return visible_; }
     
     void set_minimized(bool minimized);
+    void set_hide_on_minimize(bool hide) { hide_on_minimize_ = hide; }
     void set_on_minimize(std::function<void(bool)> cb) { on_minimize_ = cb; }
     bool is_minimized() const { return minimized_; }
     
@@ -61,6 +62,7 @@ public:
     void set_on_move(std::function<void(int, int)> cb) { on_move_ = cb; }
     void set_on_resize(std::function<void(int, int)> cb) { on_resize_ = cb; }
     void set_on_close(std::function<void()> cb) { on_close_ = cb; }
+    void set_destroy_on_close(bool destroy) { destroy_on_close_ = destroy; }
 
     int get_x() const { return x_; }
     int get_y() const { return y_; }
@@ -117,6 +119,8 @@ private:
     int drag_start_x_ = 0, drag_start_y_ = 0;
     int initial_win_x_ = 0, initial_win_y_ = 0;
     int initial_win_w_ = 0, initial_win_h_ = 0;
+    bool hide_on_minimize_ = false;
+    bool destroy_on_close_ = true;
 };
 
 class WindowManager {
@@ -128,6 +132,16 @@ public:
     static Window* active_drag_win_;
     static Window* active_resize_win_;
     static bool is_attached_;
+
+    static void set_margin_top(int margin) { margin_top_ = margin; }
+    static void set_margin_bottom(int margin) { margin_bottom_ = margin; }
+    static void set_margin_left(int margin) { margin_left_ = margin; }
+    static void set_margin_right(int margin) { margin_right_ = margin; }
+
+    static int margin_top_;
+    static int margin_bottom_;
+    static int margin_left_;
+    static int margin_right_;
 };
 
 } // namespace NetzWirbel

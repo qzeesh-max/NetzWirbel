@@ -18,6 +18,8 @@
 #include "NetzWirbel/App.hpp"
 #include "NetzWirbel/DOM/Elements.hpp"
 #include "NetzWirbel/DOM/Grid.hpp"
+#include "NetzWirbel/DOM/StatusBar.hpp"
+#include "NetzWirbel/DOM/Window.hpp"
 #include "NetzWirbel/Network.hpp"
 #include <iostream>
 #include <memory>
@@ -37,6 +39,7 @@ struct MarketDataTickerRow {
     int ask_size = 0;
     double last_px = 0;
     long long total_vol = 0;
+    std::string time;
 };
 
 class MarketDataApp : public App {
@@ -46,7 +49,7 @@ public:
         
         g_app = std::make_shared<HTMLDivElement>(ctx);
         ctx->register_element(g_app);
-        g_app->set_attribute(ctx_->strings.style, "display: flex; flex-direction: column; height: 100vh; background-color: #121212; color: #e0e0e0; font-family: monospace; margin: -8px;");
+        g_app->set_attribute(ctx_->strings.style, "position: relative; box-sizing: border-box; padding-bottom: 32px; display: flex; flex-direction: column; height: 100vh; background-color: #121212; color: #e0e0e0; font-family: monospace; margin: -8px;");
         
         Command cmd;
         cmd.type = CommandType::APPEND_CHILD;
@@ -85,6 +88,7 @@ public:
         g_grid->add_column("Ask Size", 100);
         g_grid->add_column("Last Price", 100);
         g_grid->add_column("Total Vol", 150);
+        g_grid->add_column("Time", 100);
 
         g_grid->set_on_render_row([this](std::shared_ptr<GridRow<MarketDataTickerRow>> row, const MarketDataTickerRow& data) {
             row->add_cell(data.symbol, 100, "Symbol");
@@ -94,12 +98,13 @@ public:
             row->add_cell(std::to_string(data.ask_size), 100, "Ask Size");
             row->add_cell(format_price(data.last_px), 100, "Last Price");
             row->add_cell(std::to_string(data.total_vol), 150, "Total Vol");
+            row->add_cell(data.time, 100, "Time");
 
             std::string row_class = (row->seq_ % 2 == 0) ? "md-row-even" : "md-row-odd";
             row->set_attribute("class", row_class);
-            int widths[] = {100, 100, 100, 100, 100, 100, 150};
+            int widths[] = {100, 100, 100, 100, 100, 100, 150, 100};
             
-            for (int i = 0; i < 7; ++i) {
+            for (int i = 0; i < 8; ++i) {
                 auto cell = row->get_cell(i);
                 if (cell) {
                     std::stringstream ss;
@@ -120,6 +125,7 @@ public:
             tr.bid_size = 0;
             tr.ask_size = 0;
             tr.total_vol = 0;
+            tr.time = "";
             
             auto row_ptr = g_grid->add_row(tr);
             tr.row_ptr = row_ptr;
@@ -131,15 +137,38 @@ public:
             this->on_market_data(msg);
         });
 
-        g_stats_pane = std::make_shared<HTMLDivElement>(ctx);
-        ctx->register_element(g_stats_pane);
-        g_stats_pane->set_attribute(ctx_->strings.style, "height: 40px; background-color: #000; border-top: 2px solid #00e5ff; padding: 10px; overflow-y: auto; display: flex; align-items: center; white-space: pre-wrap; font-size: 14px;");
-        g_stats_pane->set_text_content("Performance Stats: initializing...");
-        g_app->append_child(g_stats_pane);
+        g_status_bar = std::make_shared<StatusBar>(ctx);
+        ctx->register_element(g_status_bar);
+        
+        g_stats_panel = std::make_shared<StatusBarPanel>(ctx, BevelStyle::Depressed);
+        ctx->register_element(g_stats_panel);
+        g_status_bar->add_panel(g_stats_panel);
+        
+        g_clock_panel = std::make_shared<StatusBarPanel>(ctx, BevelStyle::Embossed);
+        ctx->register_element(g_clock_panel);
+        g_clock_panel->set_attribute(ctx_->strings.style, "margin-left: auto;"); // push to right
+        g_status_bar->add_panel(g_clock_panel);
+
+        g_app->append_child(g_status_bar);
+        
+        // Window constraints since we added a status bar
+        WindowManager::set_margin_bottom(32);
     }
 
     void on_tick(double time) override {
         ctx_->send_ping();
+
+        // Update clock every second roughly
+        static int last_sec = 0;
+        int current_sec = static_cast<int>(time / 1000);
+        if (current_sec != last_sec) {
+            time_t now = std::time(nullptr);
+            tm* ltm = localtime(&now);
+            char buf[32];
+            strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", ltm);
+            g_clock_panel->set_text_content_conflated(buf);
+            last_sec = current_sec;
+        }
 
         static double last_stats_time = 0;
         if (time - last_stats_time > 1000) {
@@ -153,7 +182,7 @@ public:
                << " | StdDev: " << format_price(stats.stddev)
                << " | p99: " << format_price(stats.p99)
                << " | Conflated Hits: " << ctx_->get_conflation_hits();
-            g_stats_pane->set_text_content_conflated(ss.str());
+            g_stats_panel->set_text_content_conflated(ss.str());
             last_stats_time = time;
         }
     }
@@ -162,7 +191,9 @@ private:
     Context* ctx_ = nullptr;
     std::shared_ptr<HTMLDivElement> g_app;
     std::shared_ptr<Grid<MarketDataTickerRow>> g_grid;
-    std::shared_ptr<HTMLDivElement> g_stats_pane;
+    std::shared_ptr<StatusBar> g_status_bar;
+    std::shared_ptr<StatusBarPanel> g_stats_panel;
+    std::shared_ptr<StatusBarPanel> g_clock_panel;
     std::shared_ptr<WebSocket> g_ws;
     std::vector<MarketDataTickerRow> g_tickers;
 
@@ -183,7 +214,7 @@ private:
                 while (std::getline(ls, part, '|')) {
                     parts.push_back(part);
                 }
-                if (parts.size() == 7) {
+                if (parts.size() >= 7) {
                     std::string symbol = parts[0];
                     for (size_t i = 0; i < g_tickers.size(); ++i) {
                         auto& tr = g_tickers[i];
@@ -196,6 +227,9 @@ private:
                             tr.bid_size = std::stoi(parts[4]);
                             tr.ask_size = std::stoi(parts[5]);
                             tr.total_vol = std::stoll(parts[6]);
+                            if (parts.size() >= 8) {
+                                tr.time = parts[7];
+                            }
 
                             auto row_ptr = tr.row_ptr;
                             if (row_ptr) {
@@ -205,6 +239,9 @@ private:
                                 row_ptr->get_cell(4)->set_text_content_conflated(parts[5]);
                                 row_ptr->get_cell(5)->set_text_content_conflated(parts[1]);
                                 row_ptr->get_cell(6)->set_text_content_conflated(parts[6]);
+                                if (parts.size() >= 8) {
+                                    row_ptr->get_cell(7)->set_text_content_conflated(parts[7]);
+                                }
 
                                 std::string color_class = (tr.last_px >= old_last) ? "md-cell md-up" : "md-cell md-down";
                                 row_ptr->get_cell(5)->set_class_conflated(color_class);

@@ -18,7 +18,7 @@
             flex: 1;
             overflow: auto;
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr;
+            grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1fr;
             align-content: start;
         }
 
@@ -71,6 +71,7 @@
         <div class="cell header">Ask Size</div>
         <div class="cell header">Last Price</div>
         <div class="cell header">Total Vol</div>
+        <div class="cell header">Time</div>
         
         <!-- Generated dynamically in C++ but could be here. Let's pre-generate 65 rows here for binding -->
         <script>
@@ -88,6 +89,7 @@
                     <div class="cell ${rowClass}" id="ask-sz-${sym}">0</div>
                     <div class="cell ${rowClass}" id="last-px-${sym}">0.00</div>
                     <div class="cell ${rowClass}" id="vol-${sym}">0</div>
+                    <div class="cell ${rowClass}" id="time-${sym}"></div>
                 `);
             }
         </script>

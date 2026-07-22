@@ -255,7 +255,7 @@ void Context::process_events() {
                 if (msg.event_type_ptr) {
                     std::string event_type(reinterpret_cast<const char*>(msg.event_type_ptr), msg.event_type_len);
                     if (event_type == "mousemove" || event_type == "mousedown" || event_type == "mouseup" || event_type == "click") {
-                        MouseEvent ev(event_type, msg.client_x, msg.client_y);
+                        MouseEvent ev(event_type, msg.client_x, msg.client_y, msg.modifiers);
                         el->handle_event(ev);
                     } else if (event_type == "keydown" || event_type == "keyup") {
                         std::string key_str = "";
@@ -263,7 +263,7 @@ void Context::process_events() {
                             key_str = std::string(reinterpret_cast<const char*>(msg.str_val_ptr), msg.str_val_len);
                             delete[] reinterpret_cast<char*>(msg.str_val_ptr);
                         }
-                        KeyboardEvent ev(event_type, key_str);
+                        KeyboardEvent ev(event_type, key_str, msg.modifiers);
                         el->handle_event(ev);
                     } else {
                         Event ev(event_type);

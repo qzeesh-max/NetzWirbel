@@ -323,6 +323,18 @@ private:
     rej_win_ = std::make_shared<Window>(ctx_, "rejections", "Standalone Rejections", 680, 420, 700, 300);
     pref_win_ = std::make_shared<Window>(ctx_, "preferences", "Preferences", 200, 200, 300, 250);
 
+    md_win_->set_hide_on_minimize(true);
+    orders_win_->set_hide_on_minimize(true);
+    exec_win_->set_hide_on_minimize(true);
+    rej_win_->set_hide_on_minimize(true);
+    pref_win_->set_hide_on_minimize(true);
+
+    md_win_->set_destroy_on_close(false);
+    orders_win_->set_destroy_on_close(false);
+    exec_win_->set_destroy_on_close(false);
+    rej_win_->set_destroy_on_close(false);
+    pref_win_->set_destroy_on_close(false);
+
     main_div->append_child(md_win_);
     main_div->append_child(orders_win_);
     main_div->append_child(exec_win_);

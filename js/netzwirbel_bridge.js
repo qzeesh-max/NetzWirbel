@@ -148,7 +148,9 @@ class NetzWirbelBridge {
             SET_STYLES: 15,
             SET_TEXT_CONTENT_CONFLATED: 16,
             SET_CLASS_CONFLATED: 17,
-            SET_STYLE_CONFLATED: 18
+            SET_STYLE_CONFLATED: 18,
+            REMOVE_CHILD: 19,
+            DESTROY_ELEMENT: 20
         };
         
         this.EVENT = {
@@ -373,6 +375,22 @@ class NetzWirbelBridge {
                 }
                 break;
             }
+            case this.CMD.REMOVE_CHILD: {
+                const parent = this.elements.get(targetId);
+                const child = this.elements.get(arg1);
+                if (parent && child && child.parentNode === parent) {
+                    parent.removeChild(child);
+                }
+                break;
+            }
+            case this.CMD.DESTROY_ELEMENT: {
+                const el = this.elements.get(targetId);
+                if (el) {
+                    if (el.parentNode) el.parentNode.removeChild(el);
+                    this.elements.delete(targetId);
+                }
+                break;
+            }
             case this.CMD.PING: {
                 this.sendPong(numVal);
                 break;
@@ -462,6 +480,13 @@ class NetzWirbelBridge {
             view.setFloat64(48, e.clientX, true); // client_x
             view.setFloat64(56, e.clientY, true); // client_y
         }
+        
+        let modifiers = 0;
+        if (e.ctrlKey) modifiers |= 1;
+        if (e.shiftKey) modifiers |= 2;
+        if (e.altKey) modifiers |= 4;
+        if (e.metaKey) modifiers |= 8;
+        view.setUint8(41, modifiers);
         
         if (e.key !== undefined) {
             const keyStr = this.writeString(e.key);

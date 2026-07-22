@@ -35,6 +35,7 @@ struct MarketDataHtmlTickerRow {
     std::shared_ptr<HTMLDivElement> ask_sz_el;
     std::shared_ptr<HTMLDivElement> last_px_el;
     std::shared_ptr<HTMLDivElement> vol_el;
+    std::shared_ptr<HTMLDivElement> time_el;
 
     double last_px = 0;
 };
@@ -55,6 +56,7 @@ public:
             tr.ask_sz_el = std::make_shared<HTMLDivElement>(ctx);
             tr.last_px_el = std::make_shared<HTMLDivElement>(ctx);
             tr.vol_el = std::make_shared<HTMLDivElement>(ctx);
+            tr.time_el = std::make_shared<HTMLDivElement>(ctx);
 
             ctx->register_element(tr.bid_sz_el);
             ctx->register_element(tr.bid_px_el);
@@ -62,6 +64,7 @@ public:
             ctx->register_element(tr.ask_sz_el);
             ctx->register_element(tr.last_px_el);
             ctx->register_element(tr.vol_el);
+            ctx->register_element(tr.time_el);
 
             ctx->bind_element(tr.bid_sz_el, "#bid-sz-" + tr.symbol);
             ctx->bind_element(tr.bid_px_el, "#bid-px-" + tr.symbol);
@@ -69,6 +72,7 @@ public:
             ctx->bind_element(tr.ask_sz_el, "#ask-sz-" + tr.symbol);
             ctx->bind_element(tr.last_px_el, "#last-px-" + tr.symbol);
             ctx->bind_element(tr.vol_el, "#vol-" + tr.symbol);
+            ctx->bind_element(tr.time_el, "#time-" + tr.symbol);
             
             g_tickers.push_back(tr);
         }
@@ -126,7 +130,7 @@ private:
                 while (std::getline(ls, part, '|')) {
                     parts.push_back(part);
                 }
-                if (parts.size() == 7) {
+                if (parts.size() >= 7) {
                     std::string symbol = parts[0];
                     for (size_t i = 0; i < g_tickers.size(); ++i) {
                         auto& tr = g_tickers[i];
@@ -140,6 +144,9 @@ private:
                             tr.ask_sz_el->set_text_content_conflated(parts[5]);
                             tr.last_px_el->set_text_content_conflated(parts[1]);
                             tr.vol_el->set_text_content_conflated(parts[6]);
+                            if (parts.size() >= 8) {
+                                tr.time_el->set_text_content_conflated(parts[7]);
+                            }
 
                             std::string color = (tr.last_px >= old_last) ? "#00ff00" : "#ff4444";
                             tr.last_px_el->set_style_conflated("color", color);

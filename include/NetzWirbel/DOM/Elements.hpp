@@ -27,6 +27,16 @@ public:
     HTMLDivElement(Context* ctx) : Element(ctx, ctx->strings.div) {}
 };
 
+class HTMLSpanElement : public Element {
+public:
+    HTMLSpanElement(Context* ctx) : Element(ctx, ctx->register_string("span")) {}
+};
+
+class HTMLIFrameElement : public Element {
+public:
+    HTMLIFrameElement(Context* ctx) : Element(ctx, ctx->register_string("iframe")) {}
+};
+
 class HTMLButtonElement : public Element {
 public:
     HTMLButtonElement(Context* ctx) : Element(ctx, ctx->strings.button) {}

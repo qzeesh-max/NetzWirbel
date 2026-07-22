@@ -34,6 +34,11 @@ Window* WindowManager::active_drag_win_ = nullptr;
 Window* WindowManager::active_resize_win_ = nullptr;
 bool WindowManager::is_attached_ = false;
 
+int WindowManager::margin_top_ = 0;
+int WindowManager::margin_bottom_ = 0;
+int WindowManager::margin_left_ = 0;
+int WindowManager::margin_right_ = 0;
+
 void WindowManager::attach(std::shared_ptr<Element> root_container, Context* ctx) {
     if (is_attached_) return;
     is_attached_ = true;
@@ -54,8 +59,14 @@ void WindowManager::attach(std::shared_ptr<Element> root_container, Context* ctx
             if (w->maximized_) return;
             int dx = mev->get_client_x() - w->drag_start_x_;
             int dy = mev->get_client_y() - w->drag_start_y_;
-            w->x_ = w->initial_win_x_ + dx;
-            w->y_ = w->initial_win_y_ + dy;
+            int nx = w->initial_win_x_ + dx;
+            int ny = w->initial_win_y_ + dy;
+            
+            if (ny < margin_top_) ny = margin_top_;
+            if (nx < margin_left_) nx = margin_left_;
+            
+            w->x_ = nx;
+            w->y_ = ny;
             w->set_styles({
                 {"left", std::to_string(w->x_) + "px"},
                 {"top", std::to_string(w->y_) + "px"}
@@ -89,14 +100,24 @@ void WindowManager::attach(std::shared_ptr<Element> root_container, Context* ctx
                 nx += dx;
             }
 
+            if (ny < margin_top_) {
+                nh -= (margin_top_ - ny);
+                ny = margin_top_;
+            }
+            if (nx < margin_left_) {
+                nw -= (margin_left_ - nx);
+                nx = margin_left_;
+            }
+
             if (nw >= 250) { w->x_ = nx; w->width_ = nw; }
             if (nh >= 150) { w->y_ = ny; w->height_ = nh; }
             
+            int effective_height = (w->minimized_ && !w->hide_on_minimize_) ? 32 : w->height_;
             w->set_styles({
                 {"left", std::to_string(w->x_) + "px"},
                 {"top", std::to_string(w->y_) + "px"},
                 {"width", std::to_string(w->width_) + "px"},
-                {"height", std::to_string(w->height_) + "px"}
+                {"height", std::to_string(effective_height) + "px"}
             });
         }
     });
@@ -113,6 +134,12 @@ void WindowManager::attach(std::shared_ptr<Element> root_container, Context* ctx
         if (active_resize_win_) {
             active_resize_win_->is_resizing_ = false;
             resize_saved = true;
+        }
+        
+        if (drag_saved || resize_saved) {
+            for (auto* w : active_windows_) {
+                w->get_content_container()->set_style("pointer-events", "auto");
+            }
         }
 
         auto dragged_win = active_drag_win_;
@@ -203,7 +230,7 @@ Window::Window(Context* ctx, const std::string& id, const std::string& title, in
     button_container_->append_child(btn_close_);
 
     btn_min_->add_event_listener(ctx_->strings.click, [this](const Event& e) {
-        set_minimized(true);
+        set_minimized(!minimized_);
     });
     
     btn_max_->add_event_listener(ctx_->strings.click, [this](const Event& e) {
@@ -213,6 +240,10 @@ Window::Window(Context* ctx, const std::string& id, const std::string& title, in
     btn_close_->add_event_listener(ctx_->strings.click, [this](const Event& e) {
         set_visible(false);
         if (on_close_) on_close_();
+        if (destroy_on_close_) {
+            WindowManager::unregister_window(this);
+            destroy();
+        }
     });
 
     // Content Container
@@ -236,6 +267,9 @@ Window::Window(Context* ctx, const std::string& id, const std::string& title, in
             initial_win_x_ = x_;
             initial_win_y_ = y_;
             bring_to_front();
+            for (auto* w : WindowManager::active_windows_) {
+                w->get_content_container()->set_style("pointer-events", "none");
+            }
             WindowManager::active_drag_win_ = this;
         }
     });
@@ -259,6 +293,8 @@ Window::Window(Context* ctx, const std::string& id, const std::string& title, in
         int mode = h.first;
         handle_el->add_event_listener(ctx_->register_string("mousedown"), [this, mode](const Event& e) {
             if (auto* me = dynamic_cast<const MouseEvent*>(&e)) {
+                if (maximized_) return;
+                if (minimized_ && mode != 3 && mode != 4) return;
                 is_resizing_ = true;
                 resize_mode_ = mode;
                 drag_start_x_ = me->get_client_x();
@@ -268,6 +304,9 @@ Window::Window(Context* ctx, const std::string& id, const std::string& title, in
                 initial_win_w_ = width_;
                 initial_win_h_ = height_;
                 bring_to_front();
+                for (auto* w : WindowManager::active_windows_) {
+                    w->get_content_container()->set_style("pointer-events", "none");
+                }
                 WindowManager::active_resize_win_ = this;
             }
         });
@@ -285,26 +324,31 @@ void Window::set_title(const std::string& title) {
 
 void Window::apply_styles() {
     std::stringstream ss;
-    if (maximized_) {
-        ss << "position: absolute; left: 0px; top: 40px; width: 100%; height: calc(100% - 40px); "
+    if (maximized_ && !minimized_) {
+        ss << "position: absolute; "
+           << "left: " << WindowManager::margin_left_ << "px; "
+           << "top: " << WindowManager::margin_top_ << "px; "
+           << "width: calc(100% - " << (WindowManager::margin_left_ + WindowManager::margin_right_) << "px); "
+           << "height: calc(100% - " << (WindowManager::margin_top_ + WindowManager::margin_bottom_) << "px); "
            << "background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); "
            << "-webkit-backdrop-filter: blur(10px); border-radius: 0; "
-           << "border: none; z-index: " << (is_modal_ ? z_index_ + 10000 : z_index_) << "; display: " << (visible_ && !minimized_ ? "flex" : "none") << "; "
-           << "flex-direction: column;";
+           << "border: none; z-index: " << (is_modal_ ? z_index_ + 10000 : z_index_) << "; display: " << (visible_ ? "flex" : "none") << "; "
+           << "flex-direction: column; overflow: hidden;";
     } else {
         bool is_active = (z_index_ == global_z_index_ - 1);
         std::string border_style = is_active ? "1px solid rgba(135, 206, 250, 0.8)" : "1px solid rgba(255,255,255,0.4)";
         std::string box_shadow = is_active ? "0 8px 32px 0 rgba(31, 38, 135, 0.25)" : "0 8px 32px 0 rgba(31, 38, 135, 0.15)";
         
+        int effective_height = minimized_ ? 32 : height_;
         ss << "position: absolute; "
            << "left: " << x_ << "px; top: " << y_ << "px; "
-           << "width: " << width_ << "px; height: " << height_ << "px; "
+           << "width: " << width_ << "px; height: " << effective_height << "px; "
            << "background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); "
            << "-webkit-backdrop-filter: blur(10px); border-radius: 12px; "
            << "border: " << border_style << "; "
            << "box-shadow: " << box_shadow << "; "
-           << "display: " << (visible_ && !minimized_ ? "flex" : "none") << "; "
-           << "flex-direction: column; "
+           << "display: " << (visible_ && !(minimized_ && hide_on_minimize_) ? "flex" : "none") << "; "
+           << "flex-direction: column; overflow: hidden; "
            << "z-index: " << (is_modal_ ? z_index_ + 10000 : z_index_) << "; ";
     }
     set_attribute(ctx_->strings.style, ss.str());
@@ -324,6 +368,8 @@ void Window::set_visible(bool visible) {
 
 void Window::set_minimized(bool minimized) {
     minimized_ = minimized;
+    content_container_->set_style("display", minimized ? "none" : "flex");
+    std::static_pointer_cast<Button>(btn_min_)->set_icon(minimized_ ? "+" : "-");
     apply_styles();
     if (!minimized) {
         bring_to_front();
@@ -333,6 +379,9 @@ void Window::set_minimized(bool minimized) {
 
 void Window::set_maximized(bool maximized) {
     maximized_ = maximized;
+    if (maximized_ && minimized_) {
+        set_minimized(false);
+    }
     apply_styles();
     if (maximized_) {
         std::static_pointer_cast<Button>(btn_max_)->set_icon("❐");

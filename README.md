@@ -58,6 +58,9 @@ cmake --build build -j 4
 
 The examples consist of WebAssembly frontends and native C++ backends (like `OrderMatchBackend` and `OdysseyBackend`).
 
+### Keyboard Shortcuts
+The Desktop application includes smart keyboard shortcut handling across platforms. Pressing `Command+X` on macOS (or `Alt+X` on Windows) efficiently delegates a global exit or back navigation event.
+
 ### Build Instructions
 The examples are automatically built when you run `build_all.sh` (macOS/Linux) or `build_all.cmd` (Windows) in the base directory.
 

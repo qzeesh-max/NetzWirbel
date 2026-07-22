@@ -22,6 +22,11 @@ namespace NetzWirbel {
 
 class Event {
 public:
+    static constexpr uint8_t MODIFIER_CTRL = 1 << 0;
+    static constexpr uint8_t MODIFIER_SHIFT = 1 << 1;
+    static constexpr uint8_t MODIFIER_ALT = 1 << 2;
+    static constexpr uint8_t MODIFIER_META = 1 << 3;
+
     Event(const std::string& type) : type_(type) {}
     virtual ~Event() = default;
 
@@ -33,26 +38,40 @@ private:
 
 class MouseEvent : public Event {
 public:
-    MouseEvent(const std::string& type, double client_x, double client_y) 
-        : Event(type), client_x_(client_x), client_y_(client_y) {}
+    MouseEvent(const std::string& type, double client_x, double client_y, uint8_t modifiers = 0) 
+        : Event(type), client_x_(client_x), client_y_(client_y), modifiers_(modifiers) {}
 
     double get_client_x() const { return client_x_; }
     double get_client_y() const { return client_y_; }
+    
+    bool ctrl_key() const { return (modifiers_ & MODIFIER_CTRL) != 0; }
+    bool shift_key() const { return (modifiers_ & MODIFIER_SHIFT) != 0; }
+    bool alt_key() const { return (modifiers_ & MODIFIER_ALT) != 0; }
+    bool meta_key() const { return (modifiers_ & MODIFIER_META) != 0; }
+    uint8_t get_modifiers() const { return modifiers_; }
 
 private:
     double client_x_;
     double client_y_;
+    uint8_t modifiers_;
 };
 
 class KeyboardEvent : public Event {
 public:
-    KeyboardEvent(const std::string& type, const std::string& key) 
-        : Event(type), key_(key) {}
+    KeyboardEvent(const std::string& type, const std::string& key, uint8_t modifiers = 0) 
+        : Event(type), key_(key), modifiers_(modifiers) {}
 
     const std::string& get_key() const { return key_; }
 
+    bool ctrl_key() const { return (modifiers_ & MODIFIER_CTRL) != 0; }
+    bool shift_key() const { return (modifiers_ & MODIFIER_SHIFT) != 0; }
+    bool alt_key() const { return (modifiers_ & MODIFIER_ALT) != 0; }
+    bool meta_key() const { return (modifiers_ & MODIFIER_META) != 0; }
+    uint8_t get_modifiers() const { return modifiers_; }
+
 private:
     std::string key_;
+    uint8_t modifiers_;
 };
 
 } // namespace NetzWirbel

@@ -57,8 +57,10 @@ Element::Element(Context* ctx, SkipCreate)
 }
 
 Element::~Element() {
-    // The element is either already unregistered from the context,
-    // or the context is being destroyed. No need to unregister here.
+    Command cmd;
+    cmd.type = CommandType::DESTROY_ELEMENT;
+    cmd.target_id = id_;
+    ctx_->send_command(cmd);
 }
 
 void Element::set_attribute(const std::string& key, const std::string& value) {
@@ -373,9 +375,38 @@ void Element::append_child(std::shared_ptr<Element> child) {
 void Element::remove_child(std::shared_ptr<Element> child) {
     auto it = std::find(children_.begin(), children_.end(), child);
     if (it != children_.end()) {
+        Command cmd;
+        cmd.type = CommandType::REMOVE_CHILD;
+        cmd.target_id = id_;
+        cmd.arg1 = child->get_id();
+        ctx_->send_command(cmd);
+
         children_.erase(it);
         child->set_parent(nullptr);
     }
+}
+
+void Element::destroy() {
+    if (parent_) {
+        auto it = std::find(parent_->children_.begin(), parent_->children_.end(), shared_from_this());
+        if (it != parent_->children_.end()) {
+            Command cmd;
+            cmd.type = CommandType::REMOVE_CHILD;
+            cmd.target_id = parent_->get_id();
+            cmd.arg1 = id_;
+            ctx_->send_command(cmd);
+            parent_->children_.erase(it);
+        }
+        parent_ = nullptr;
+    }
+    
+    auto children_copy = children_;
+    for (auto& c : children_copy) {
+        c->destroy();
+    }
+    children_.clear();
+
+    ctx_->unregister_element(id_);
 }
 
 void Element::focus() {

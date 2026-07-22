@@ -270,7 +270,10 @@ function startMarketDataSimulation() {
                 let trade_sz = Math.floor(Math.random() * 100 + 1) * 100;
                 t.total_vol += trade_sz;
 
-                updates.push(`MD|${t.symbol}|${t.last_px.toFixed(2)}|${t.bid_px.toFixed(2)}|${t.ask_px.toFixed(2)}|${t.bid_size}|${t.ask_size}|${t.total_vol}`);
+                let now = new Date();
+                let timeString = now.toTimeString().split(' ')[0]; // Returns HH:mm:ss
+
+                updates.push(`MD|${t.symbol}|${t.last_px.toFixed(2)}|${t.bid_px.toFixed(2)}|${t.ask_px.toFixed(2)}|${t.bid_size}|${t.ask_size}|${t.total_vol}|${timeString}`);
             }
         }
 
@@ -394,7 +397,11 @@ wss.on('connection', (ws, req) => {
     ws.isMarketData = true;
     
     // Send initial snapshot
-    let snapshot = tickers.map(t => `MD|${t.symbol}|${t.last_px.toFixed(2)}|${t.bid_px.toFixed(2)}|${t.ask_px.toFixed(2)}|${t.bid_size}|${t.ask_size}|${t.total_vol}`);
+    let snapshot = tickers.map(t => {
+        let now = new Date();
+        let timeString = now.toTimeString().split(' ')[0];
+        return `MD|${t.symbol}|${t.last_px.toFixed(2)}|${t.bid_px.toFixed(2)}|${t.ask_px.toFixed(2)}|${t.bid_size}|${t.ask_size}|${t.total_vol}|${timeString}`;
+    });
     ws.send(snapshot.join('\n'));
 
     ws.on('message', (message) => {

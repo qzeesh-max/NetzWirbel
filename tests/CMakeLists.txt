@@ -24,10 +24,10 @@ function(netzwirbel_add_test test_name source_file)
     )
     set_target_properties(${test_name} PROPERTIES SUFFIX ".js")
     
-    # Register the test to be run with ctest (though we'll use node to run them directly or via ctest)
     add_test(NAME ${test_name} COMMAND node ${CMAKE_CURRENT_BINARY_DIR}/${test_name}.js)
 endfunction()
 
+# Add our tests
 netzwirbel_add_test(RingBufferTest core/RingBufferTest.cpp)
 netzwirbel_add_test(ExamplesTest examples/test_examples.cpp)
 netzwirbel_add_test(FixParserTest examples/FixParserTest.cpp)

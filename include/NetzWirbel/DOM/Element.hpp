@@ -75,6 +75,7 @@ public:
 
     virtual void append_child(std::shared_ptr<Element> child);
     virtual void remove_child(std::shared_ptr<Element> child);
+    virtual void destroy();
 
     void focus();
     void select();
