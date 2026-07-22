@@ -23,7 +23,9 @@ enum class CommandType : uint32_t {
     SET_STYLES = 15,
     SET_TEXT_CONTENT_CONFLATED = 16,
     SET_CLASS_CONFLATED = 17,
-    SET_STYLE_CONFLATED = 18
+    SET_STYLE_CONFLATED = 18,
+    REMOVE_CHILD = 19,
+    DESTROY_ELEMENT = 20
 };
 ```
 
@@ -56,6 +58,7 @@ struct EventMsg {
     uint32_t str_val_len;
     double num_val;
     bool bool_val;
+    uint8_t modifiers; // Bitmask: 1=Ctrl, 2=Shift, 4=Alt, 8=Meta
     double client_x;
     double client_y;
 };

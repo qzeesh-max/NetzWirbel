@@ -69,6 +69,12 @@ Updates the text content of the element using a lock-free, O(1) amortized approa
 ### `void append_child(std::shared_ptr<Element> child)`
 Appends another Element instance as a child node in the DOM. Issues an `APPEND_CHILD` command.
 
+### `virtual void remove_child(std::shared_ptr<Element> child)`
+Removes the specified child element from the DOM and issues a `REMOVE_CHILD` command. Note: This does not automatically destroy the child element in C++ memory; it merely detaches it.
+
+### `virtual void destroy()`
+Recursively destroys this element and all its children. Removes it from its parent (if any), unregisters it from the `Context`, and issues a `DESTROY_ELEMENT` command to Javascript to release the DOM node and break memory links. Useful for cleaning up UI components when they are permanently closed.
+
 ## Event Handling
 
 ### `void add_event_listener(...)`
