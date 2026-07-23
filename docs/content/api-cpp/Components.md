@@ -73,27 +73,36 @@ A draggable, resizable window container component.
   - `void set_on_close(std::function<void()> cb)`
 - **Getters**: `get_x()`, `get_y()`, `get_width()`, `get_height()`, `get_z_index()`
 
+### `WindowManager`
+A global utility class for managing floating windows and global event listeners.
+- **`static void initialize_global_listeners(Context* ctx)`**: Hooks into global `mousemove` and `mouseup` events. This is automatically called when the first `Window` is created, but **must be called manually** during initialization if you are using draggable components (like `Grid` column reordering) in an application without `Window` containers.
+
 ## `Grid<T, ColEnum>`
-A highly functional, sortable, and resizable data grid component.
+A highly functional, sortable, and resizable data grid component. `ColEnum` defaults to `int`, but can be set to an `enum class` to strictly type your grid columns.
 - **Constructor**: `Grid(Context* ctx)`
 - **`void add_column(const std::string& name, int default_width)`**: Defines a new column.
 - **`void set_on_render_row(std::function<void(std::shared_ptr<GridRow<T, ColEnum>>, const T&)> cb)`**: Sets the callback to render row cells based on data of type `T`.
 - **`std::shared_ptr<GridRow<T, ColEnum>> add_row(const T& data)`**: Adds a new row with the specified data.
 - **`void clear_rows()`**: Removes all rows from the grid.
-- **`void set_on_cell_double_click(std::function<void(std::shared_ptr<GridRow<T, ColEnum>>, ColEnum)> cb)`**: Triggered when a cell is double-clicked.
+- **`void set_on_cell_double_click(std::function<void(std::shared_ptr<GridRow<T, ColEnum>>, ColEnum)> cb)`**: Triggered when a cell is double-clicked. The `ColEnum` is passed to uniquely identify which column was clicked.
 - **`int get_col_width(size_t idx) const`**: Returns the current width of a specific column.
+- **Column Reordering & Freezing**:
+  - **`void set_frozen_columns(int count)`**: Locks the first `count` columns to the left side. Frozen columns cannot be dragged, and other columns cannot be dragged into the frozen area.
+  - **`std::vector<int> get_column_orders() const`**: Retrieves the current visual order of columns (useful for layout persistence).
+  - **`void set_column_orders(const std::vector<int>& orders)`**: Programmatically restores the visual order of columns.
+  - **`void set_on_column_order_changed(std::function<void()> cb)`**: Triggered when the user drag-and-drops a column header to reorder it. Note: Requires `WindowManager::initialize_global_listeners()` to be active.
 - **Sorting Configuration**:
   - `int sort_col_idx_`: The index of the column currently being sorted.
   - `SortDirection sort_dir_`: Direction of the sort (`SORT_NONE`, `SORT_ASC`, `SORT_DESC`).
   - `std::function<bool(const T& a, const T& b, ColEnum col_idx)> sort_cmp_`: Callback that performs the comparison between two rows for sorting.
-- **`void apply_sort()`**: Re-sorts the rows based on the current sort configuration.
+- **`void apply_sort()`**: Re-sorts the rows visually based on the current sort configuration. Call this periodically if your underlying data updates rapidly.
 
 ### `GridRow<T, ColEnum>`
 A row within a `Grid<T, ColEnum>`.
-- **`void add_cell(const std::string& text, int width_px, std::optional<ColEnum> col_name = std::nullopt)`**: Adds a text cell with a defined width to the row.
+- **`void add_cell(const std::string& text, int width_px, std::optional<ColEnum> col_name = std::nullopt)`**: Adds a text cell with a defined width to the row. You should pass your strongly-typed `ColEnum` to identify the cell.
 - **`std::shared_ptr<Element> get_cell(size_t index)`**: Retrieves the DOM element for a cell.
-- **`void update_data(const T& data)`**: Updates the underlying data object associated with the row.
-- **`T get_data() const`**: Retrieves the row's data object.
+- **`void update_data(const T& data)`**: Updates the underlying data object associated with the row. **Must be called** when the data changes for sorting to correctly reflect the new values.
+- **`const T& get_data() const`**: Retrieves the row's data object.
 - **`void set_on_double_click(std::function<void(GridRow<T, ColEnum>*, ColEnum)> cb)`**: Sets the internal double-click handler.
 
 ## Menus
