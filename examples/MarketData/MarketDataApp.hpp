@@ -166,6 +166,9 @@ public:
         
         // Window constraints since we added a status bar
         WindowManager::set_margin_bottom(32);
+        
+        // Initialize global listeners for Grid column dragging
+        WindowManager::attach(g_app, ctx_);
     }
 
     void on_tick(double time) override {
@@ -197,6 +200,12 @@ public:
                << " | Conflated Hits: " << ctx_->get_conflation_hits();
             g_stats_panel->set_text_content_conflated(ss.str());
             last_stats_time = time;
+        }
+
+        static double last_sort_time = 0;
+        if (time - last_sort_time > 500) {
+            g_grid->apply_sort();
+            last_sort_time = time;
         }
     }
 
@@ -253,11 +262,13 @@ private:
                                 row_ptr->get_cell(5)->set_text_content_conflated(parts[1]);
                                 row_ptr->get_cell(6)->set_text_content_conflated(parts[6]);
                                 if (parts.size() >= 8) {
-                                    row_ptr->get_cell(7)->set_text_content_conflated(parts[7]);
+                                row_ptr->get_cell(7)->set_text_content_conflated(parts[7]);
                                 }
 
                                 std::string color_class = (tr.last_px >= old_last) ? "md-cell md-up" : "md-cell md-down";
                                 row_ptr->get_cell(5)->set_class_conflated(color_class);
+
+                                row_ptr->update_data(tr);
                             }
                             break;
                         }
