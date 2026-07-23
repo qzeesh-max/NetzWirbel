@@ -43,6 +43,12 @@
 
 using namespace NetzWirbel;
 
+enum class MdCol { Symbol, BidSize, Bid, Ask, AskSize, TrdVolume, Last, TotVolume };
+enum class OrderCol { OrdId, Symbol, Side, Price, Qty, CumQty, Leaves, Status, OrigId };
+enum class ExecCol { ExecId, OrdId, Symbol, Side, LastQty, LastPx };
+enum class RejectCol { Id, OrigId, MsgType, Status, Text };
+enum class OrderField { None, Qty, Price };
+
 
 struct OdysseyMarketData {
   std::string symbol;
@@ -53,7 +59,7 @@ struct OdysseyMarketData {
   uint32_t lastSz;
   double lastPx;
   uint32_t volume;
-  std::shared_ptr<GridRow<OdysseyMarketData>> row_ptr;
+  std::shared_ptr<GridRow<OdysseyMarketData, MdCol>> row_ptr;
   bool is_invalid = false;
 };
 
@@ -89,7 +95,9 @@ struct OdysseyRejectData {
 };
 
 
+
 class OdysseyTraderApp;
+
 extern OdysseyTraderApp *g_odyssey_app_instance;
 
 class OdysseyTraderApp : public App {
@@ -145,11 +153,11 @@ private:
 
   // Window States
   std::shared_ptr<Window> md_win_, orders_win_, exec_win_, rej_win_, pref_win_;
-  std::shared_ptr<Grid<OdysseyMarketData>> md_grid_;
-  std::shared_ptr<Grid<OdysseyOrderData>> order_grid_;
+  std::shared_ptr<Grid<OdysseyMarketData, MdCol>> md_grid_;
+  std::shared_ptr<Grid<OdysseyOrderData, OrderCol>> order_grid_;
   std::shared_ptr<NetzWirbel::HTMLDivElement> order_row_;
-  std::shared_ptr<Grid<OdysseyExecutionData>> exec_grid_;
-  std::shared_ptr<Grid<OdysseyRejectData>> reject_grid_;
+  std::shared_ptr<Grid<OdysseyExecutionData, ExecCol>> exec_grid_;
+  std::shared_ptr<Grid<OdysseyRejectData, RejectCol>> reject_grid_;
   
   // Preferences
   int pref_default_qty_ = 100;
@@ -552,18 +560,18 @@ private:
     auto md_cont = md_win_->get_content_container();
     md_cont->set_attribute(ctx_->strings.style, "padding: 0px; flex-grow: 1; min-height: 0; box-sizing: border-box; overflow: auto; display: flex; flex-direction: column;");
 
-    md_grid_ = std::make_shared<Grid<OdysseyMarketData>>(ctx_);
+    md_grid_ = std::make_shared<Grid<OdysseyMarketData, MdCol>>(ctx_);
     md_grid_->add_column("Symbol", 80);
-    md_grid_->sort_cmp_ = [](const OdysseyMarketData& a, const OdysseyMarketData& b, int col_idx) {
+    md_grid_->sort_cmp_ = [](const OdysseyMarketData& a, const OdysseyMarketData& b, MdCol col_idx) {
         switch (col_idx) {
-            case 0: return a.symbol < b.symbol;
-            case 1: return a.bidSz < b.bidSz;
-            case 2: return a.bidPx < b.bidPx;
-            case 3: return a.askPx < b.askPx;
-            case 4: return a.askSz < b.askSz;
-            case 5: return a.lastSz < b.lastSz;
-            case 6: return a.lastPx < b.lastPx;
-            case 7: return a.volume < b.volume;
+            case MdCol::Symbol: return a.symbol < b.symbol;
+            case MdCol::BidSize: return a.bidSz < b.bidSz;
+            case MdCol::Bid: return a.bidPx < b.bidPx;
+            case MdCol::Ask: return a.askPx < b.askPx;
+            case MdCol::AskSize: return a.askSz < b.askSz;
+            case MdCol::TrdVolume: return a.lastSz < b.lastSz;
+            case MdCol::Last: return a.lastPx < b.lastPx;
+            case MdCol::TotVolume: return a.volume < b.volume;
             default: return false;
         }
     };
@@ -574,8 +582,8 @@ private:
     md_grid_->add_column("Trd Volume", 80);
     md_grid_->add_column("Last", 80);
     md_grid_->add_column("Tot Volume", 90);
-    md_grid_->set_on_render_row([this](std::shared_ptr<GridRow<OdysseyMarketData>> row, const OdysseyMarketData& data) {
-        row->add_cell("", md_grid_->get_col_width(0), "Symbol");
+    md_grid_->set_on_render_row([this](std::shared_ptr<GridRow<OdysseyMarketData, MdCol>> row, const OdysseyMarketData& data) {
+        row->add_cell("", md_grid_->get_col_width(0), MdCol::Symbol);
         
         auto cell = row->get_cell(0);
         cell->set_attribute("style", "padding: 0; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; user-select: none; width: " + std::to_string(md_grid_->get_col_width(0)) + "px; min-width: " + std::to_string(md_grid_->get_col_width(0)) + "px; max-width: " + std::to_string(md_grid_->get_col_width(0)) + "px;");
@@ -679,50 +687,50 @@ private:
             row->add_cell("", md_grid_->get_col_width(6));
             row->add_cell("", md_grid_->get_col_width(7));
         } else {
-            row->add_cell(std::to_string(data.bidSz), md_grid_->get_col_width(1), "Bid Size");
-            row->add_cell(format_px(data.bidPx), md_grid_->get_col_width(2), "Bid");
-            row->add_cell(format_px(data.askPx), md_grid_->get_col_width(3), "Ask");
-            row->add_cell(std::to_string(data.askSz), md_grid_->get_col_width(4), "Ask Size");
-            row->add_cell(std::to_string(data.lastSz), md_grid_->get_col_width(5), "Trd Volume");
-            row->add_cell(format_px(data.lastPx), md_grid_->get_col_width(6), "Last");
-            row->add_cell(std::to_string(data.volume), md_grid_->get_col_width(7), "Tot Volume");
+            row->add_cell(std::to_string(data.bidSz), md_grid_->get_col_width(1), MdCol::BidSize);
+            row->add_cell(format_px(data.bidPx), md_grid_->get_col_width(2), MdCol::Bid);
+            row->add_cell(format_px(data.askPx), md_grid_->get_col_width(3), MdCol::Ask);
+            row->add_cell(std::to_string(data.askSz), md_grid_->get_col_width(4), MdCol::AskSize);
+            row->add_cell(std::to_string(data.lastSz), md_grid_->get_col_width(5), MdCol::TrdVolume);
+            row->add_cell(format_px(data.lastPx), md_grid_->get_col_width(6), MdCol::Last);
+            row->add_cell(std::to_string(data.volume), md_grid_->get_col_width(7), MdCol::TotVolume);
         }
     });
     md_cont->append_child(md_grid_);
-    md_grid_->set_on_cell_double_click([this](auto row, const std::string& col) {
+    md_grid_->set_on_cell_double_click([this](auto row, MdCol col) {
         std::string symbol = row->get_data().symbol;
         std::string side = "Buy";
         double price = row->get_data().lastPx;
         uint32_t qty = pref_default_qty_;
-        std::string focus_field = "";
+        OrderField focus_field = OrderField::None;
 
-        if (col == "Bid" || col == "Bid Size") {
-            if (col == "Bid Size")
-            {
-              side = "Sell";
-              qty = row->get_data().bidSz;
-              focus_field = "qty";
-            } else {
-              side = "Buy";
-              qty = pref_default_qty_;
-              focus_field = "price";
-            }
-            price = row->get_data().bidPx;
-            
-        } else if (col == "Ask" || col == "Ask Size") {
-            if (col == "Ask Size") {
-              side = "Buy";
-              qty = row->get_data().askSz;
-              focus_field = "qty";
-            } else {
-              side = "Sell";
-              qty = pref_default_qty_;
-              focus_field = "price";
-            }
-            price = row->get_data().askPx;
-        }
-        else {
-          return;
+        switch (col) {
+            case MdCol::Bid:
+                side = "Buy";
+                qty = pref_default_qty_;
+                focus_field = OrderField::Price;
+                price = row->get_data().bidPx;
+                break;
+            case MdCol::BidSize:
+                side = "Sell";
+                qty = row->get_data().bidSz;
+                focus_field = OrderField::Qty;
+                price = row->get_data().bidPx;
+                break;
+            case MdCol::Ask:
+                side = "Sell";
+                qty = pref_default_qty_;
+                focus_field = OrderField::Price;
+                price = row->get_data().askPx;
+                break;
+            case MdCol::AskSize:
+                side = "Buy";
+                qty = row->get_data().askSz;
+                focus_field = OrderField::Qty;
+                price = row->get_data().askPx;
+                break;
+            default:
+                return;
         }
         open_order_entry_symbol(symbol, side, price, qty, focus_field);
     });
@@ -761,18 +769,18 @@ private:
     add_btn_func("Cancel Buys", "#558b2f", [this](const Event&) { cancel_all_orders_side("Buy"); });
     add_btn_func("Cancel Sells", "#ad1457", [this](const Event&) { cancel_all_orders_side("Sell"); });
 
-    order_grid_ = std::make_shared<Grid<OdysseyOrderData>>(ctx_);
+    order_grid_ = std::make_shared<Grid<OdysseyOrderData, OrderCol>>(ctx_);
     order_grid_->add_column("Ord ID", 100);
-    order_grid_->sort_cmp_ = [](const OdysseyOrderData& a, const OdysseyOrderData& b, int col_idx) {
+    order_grid_->sort_cmp_ = [](const OdysseyOrderData& a, const OdysseyOrderData& b, OrderCol col_idx) {
         switch (col_idx) {
-            case 0: return a.id < b.id;
-            case 1: return a.symbol < b.symbol;
-            case 2: return a.side < b.side;
-            case 3: return a.price < b.price;
-            case 4: return a.qty < b.qty;
-            case 5: return a.cumQty < b.cumQty;
-            case 6: return a.leaves < b.leaves;
-            case 7: return a.status < b.status;
+            case OrderCol::OrdId: return a.id < b.id;
+            case OrderCol::Symbol: return a.symbol < b.symbol;
+            case OrderCol::Side: return a.side < b.side;
+            case OrderCol::Price: return a.price < b.price;
+            case OrderCol::Qty: return a.qty < b.qty;
+            case OrderCol::CumQty: return a.cumQty < b.cumQty;
+            case OrderCol::Leaves: return a.leaves < b.leaves;
+            case OrderCol::Status: return a.status < b.status;
             default: return false;
         }
     };
@@ -784,7 +792,7 @@ private:
     order_grid_->add_column("Leaves", 70);
     order_grid_->add_column("Status", 100);
     order_grid_->add_column("Orig ID", 100);
-    order_grid_->set_on_render_row([this](std::shared_ptr<GridRow<OdysseyOrderData>> row, const OdysseyOrderData& ord) {
+    order_grid_->set_on_render_row([this](std::shared_ptr<GridRow<OdysseyOrderData, OrderCol>> row, const OdysseyOrderData& ord) {
         row->add_cell(ord.id, order_grid_->get_col_width(0));
         row->add_cell(ord.symbol, order_grid_->get_col_width(1));
         row->add_cell(ord.side, order_grid_->get_col_width(2));
@@ -809,16 +817,16 @@ private:
     });
     orders_cont->append_child(order_grid_);
     
-    exec_grid_ = std::make_shared<Grid<OdysseyExecutionData>>(ctx_);
+    exec_grid_ = std::make_shared<Grid<OdysseyExecutionData, ExecCol>>(ctx_);
     exec_grid_->add_column("Exec ID", 100);
-    exec_grid_->sort_cmp_ = [](const OdysseyExecutionData& a, const OdysseyExecutionData& b, int col_idx) {
+    exec_grid_->sort_cmp_ = [](const OdysseyExecutionData& a, const OdysseyExecutionData& b, ExecCol col_idx) {
         switch (col_idx) {
-            case 0:
-            case 1: return a.id < b.id;
-            case 2: return a.symbol < b.symbol;
-            case 3: return a.side < b.side;
-            case 4: return a.lastSz < b.lastSz;
-            case 5: return a.lastPx < b.lastPx;
+            case ExecCol::ExecId:
+            case ExecCol::OrdId: return a.id < b.id;
+            case ExecCol::Symbol: return a.symbol < b.symbol;
+            case ExecCol::Side: return a.side < b.side;
+            case ExecCol::LastQty: return a.lastSz < b.lastSz;
+            case ExecCol::LastPx: return a.lastPx < b.lastPx;
             default: return false;
         }
     };
@@ -827,7 +835,7 @@ private:
     exec_grid_->add_column("Side", 60);
     exec_grid_->add_column("Last Qty", 80);
     exec_grid_->add_column("Last Px", 80);
-    exec_grid_->set_on_render_row([this](std::shared_ptr<GridRow<OdysseyExecutionData>> row, const OdysseyExecutionData& ex) {
+    exec_grid_->set_on_render_row([this](std::shared_ptr<GridRow<OdysseyExecutionData, ExecCol>> row, const OdysseyExecutionData& ex) {
         row->add_cell(ex.id, exec_grid_->get_col_width(0));
         row->add_cell(ex.id, exec_grid_->get_col_width(1));
         row->add_cell(ex.symbol, exec_grid_->get_col_width(2));
@@ -837,15 +845,15 @@ private:
     });
     exec_win_->get_content_container()->append_child(exec_grid_);
 
-    reject_grid_ = std::make_shared<Grid<OdysseyRejectData>>(ctx_);
+    reject_grid_ = std::make_shared<Grid<OdysseyRejectData, RejectCol>>(ctx_);
     reject_grid_->add_column("ID", 100);
-    reject_grid_->sort_cmp_ = [](const OdysseyRejectData& a, const OdysseyRejectData& b, int col_idx) {
+    reject_grid_->sort_cmp_ = [](const OdysseyRejectData& a, const OdysseyRejectData& b, RejectCol col_idx) {
         switch (col_idx) {
-            case 0:
-            case 1: return a.id < b.id;
-            case 2: return a.refMsgType < b.refMsgType;
-            case 3: return a.status < b.status;
-            case 4: return a.text < b.text;
+            case RejectCol::Id:
+            case RejectCol::OrigId: return a.id < b.id;
+            case RejectCol::MsgType: return a.refMsgType < b.refMsgType;
+            case RejectCol::Status: return a.status < b.status;
+            case RejectCol::Text: return a.text < b.text;
             default: return false;
         }
     };
@@ -853,7 +861,7 @@ private:
     reject_grid_->add_column("Msg Type", 120);
     reject_grid_->add_column("Status", 100);
     reject_grid_->add_column("Text", 200);
-    reject_grid_->set_on_render_row([this](std::shared_ptr<GridRow<OdysseyRejectData>> row, const OdysseyRejectData& rej) {
+    reject_grid_->set_on_render_row([this](std::shared_ptr<GridRow<OdysseyRejectData, RejectCol>> row, const OdysseyRejectData& rej) {
         row->add_cell(rej.id, reject_grid_->get_col_width(0));
         row->add_cell("", reject_grid_->get_col_width(1));
         row->add_cell(rej.refMsgType, reject_grid_->get_col_width(2));
@@ -1124,7 +1132,7 @@ private:
     apply_order_dialog_style();
   }
 
-  void open_order_entry_symbol(const std::string &symbol, const std::string &side, double price = 0.0, uint32_t qty = 0, const std::string& focus_field = "") {
+  void open_order_entry_symbol(const std::string &symbol, const std::string &side, double price = 0.0, uint32_t qty = 0, OrderField focus_field = OrderField::None) {
     open_order_entry(side);
     order_symbol_input->set_value(symbol);
     if (price > 0.0) {
@@ -1136,12 +1144,17 @@ private:
         order_qty_input->set_value(std::to_string(pref_default_qty_));
     }
 
-    if (focus_field == "qty") {
-        order_qty_input->focus();
-        order_qty_input->select();
-    } else if (focus_field == "price") {
-        order_price_input->focus();
-        order_price_input->select();
+    switch (focus_field) {
+        case OrderField::Qty:
+            order_qty_input->focus();
+            order_qty_input->select();
+            break;
+        case OrderField::Price:
+            order_price_input->focus();
+            order_price_input->select();
+            break;
+        default:
+            break;
     }
 }
 

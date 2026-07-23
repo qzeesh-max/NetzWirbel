@@ -22,6 +22,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <optional>
 
 #include <functional>
 namespace NetzWirbel {
@@ -44,7 +45,7 @@ struct ColumnDef {
     std::shared_ptr<Element> sort_icon_el;
 };
 
-template <typename T>
+template <typename T, typename ColEnum = int>
 class GridRow : public HTMLDivElement {
 public:
     GridRow(Context* ctx) : HTMLDivElement(ctx) {
@@ -58,7 +59,7 @@ public:
     
     T get_data() const { return data_; }
 
-    void add_cell(const std::string& text, int width_px, const std::string& col_name = "") {
+    void add_cell(const std::string& text, int width_px, std::optional<ColEnum> col_name = std::nullopt) {
         auto cell = std::make_shared<HTMLDivElement>(ctx_);
         ctx_->register_element(cell);
         cell->set_text_content(text);
@@ -70,9 +71,9 @@ public:
         
         cell->set_attribute(ctx_->strings.style, ss.str());
         
-        if (!col_name.empty()) {
-            cell->add_event_listener("dblclick", [this, col_name, cb = on_double_click_](const Event& e) {
-                if (cb) cb(this, col_name);
+        if (col_name) {
+            cell->add_event_listener("dblclick", [this, c = *col_name, cb = on_double_click_](const Event& e) {
+                if (cb) cb(this, c);
             });
         }
         
@@ -80,7 +81,7 @@ public:
         append_child(cell);
     }
     
-    void set_on_double_click(std::function<void(GridRow<T>*, const std::string&)> cb) {
+    void set_on_double_click(std::function<void(GridRow<T, ColEnum>*, ColEnum)> cb) {
         on_double_click_ = cb;
     }
 
@@ -92,10 +93,10 @@ public:
 private:
     T data_;
     std::vector<std::shared_ptr<Element>> cells_;
-    std::function<void(GridRow<T>*, const std::string&)> on_double_click_;
+    std::function<void(GridRow<T, ColEnum>*, ColEnum)> on_double_click_;
 };
 
-template <typename T>
+template <typename T, typename ColEnum = int>
 class Grid : public HTMLDivElement {
 public:
     Grid(Context* ctx) : HTMLDivElement(ctx) {
@@ -219,7 +220,7 @@ public:
         header_container_->append_child(th);
     }
     
-    void set_on_render_row(std::function<void(std::shared_ptr<GridRow<T>>, const T&)> cb) {
+    void set_on_render_row(std::function<void(std::shared_ptr<GridRow<T, ColEnum>>, const T&)> cb) {
         on_render_row_ = cb;
     }
 
@@ -228,12 +229,12 @@ public:
         body_container_->set_text_content(ctx_->register_string(""));
     }
 
-    std::shared_ptr<GridRow<T>> add_row(const T& data) {
-        auto row = std::make_shared<GridRow<T>>(ctx_);
+    std::shared_ptr<GridRow<T, ColEnum>> add_row(const T& data) {
+        auto row = std::make_shared<GridRow<T, ColEnum>>(ctx_);
         ctx_->register_element(row);
         row->update_data(data);
         row->seq_ = ++seq_counter_;
-        row->set_on_double_click([this](GridRow<T>* r, const std::string& col) {
+        row->set_on_double_click([this](GridRow<T, ColEnum>* r, ColEnum col) {
             if (on_cell_double_click_) {
                 // Find shared_ptr
                 for (auto& sptr : rows_) {
@@ -254,7 +255,7 @@ public:
         return row;
     }
 
-    void set_on_cell_double_click(std::function<void(std::shared_ptr<GridRow<T>>, const std::string&)> cb) {
+    void set_on_cell_double_click(std::function<void(std::shared_ptr<GridRow<T, ColEnum>>, ColEnum)> cb) {
         on_cell_double_click_ = cb;
     }
     
@@ -303,10 +304,10 @@ private:
 
     std::shared_ptr<Element> header_container_;
     std::shared_ptr<Element> body_container_;
-    std::vector<std::shared_ptr<GridRow<T>>> rows_;
+    std::vector<std::shared_ptr<GridRow<T, ColEnum>>> rows_;
     std::vector<ColumnDef> cols_;
-    std::function<void(std::shared_ptr<GridRow<T>>, const std::string&)> on_cell_double_click_;
-    std::function<void(std::shared_ptr<GridRow<T>>, const T&)> on_render_row_;
+    std::function<void(std::shared_ptr<GridRow<T, ColEnum>>, const T&)> on_render_row_;
+    std::function<void(std::shared_ptr<GridRow<T, ColEnum>>, ColEnum)> on_cell_double_click_;
     
     int resizing_col_ = -1;
     double start_x_ = 0;
@@ -316,7 +317,7 @@ private:
 public:
     int sort_col_idx_ = -1;
     SortDirection sort_dir_ = SORT_NONE;
-    std::function<bool(const T& a, const T& b, int col_idx)> sort_cmp_;
+    std::function<bool(const T& a, const T& b, ColEnum col_idx)> sort_cmp_;
     bool sort_enabled_ = true;
 
     void set_sort_enabled(bool enabled) { sort_enabled_ = enabled; }
@@ -333,13 +334,13 @@ public:
         }
         
         if (sort_col_idx_ < 0 || sort_dir_ == SORT_NONE || !sort_cmp_) {
-            std::sort(rows_.begin(), rows_.end(), [](const std::shared_ptr<GridRow<T>>& a, const std::shared_ptr<GridRow<T>>& b) {
+            std::sort(rows_.begin(), rows_.end(), [](const std::shared_ptr<GridRow<T, ColEnum>>& a, const std::shared_ptr<GridRow<T, ColEnum>>& b) {
                 return a->seq_ < b->seq_;
             });
         } else {
-            std::sort(rows_.begin(), rows_.end(), [this](const std::shared_ptr<GridRow<T>>& a, const std::shared_ptr<GridRow<T>>& b) {
-                if (sort_dir_ == SORT_ASC) return sort_cmp_(a->get_data(), b->get_data(), sort_col_idx_);
-                return sort_cmp_(b->get_data(), a->get_data(), sort_col_idx_);
+            std::sort(rows_.begin(), rows_.end(), [this](const std::shared_ptr<GridRow<T, ColEnum>>& a, const std::shared_ptr<GridRow<T, ColEnum>>& b) {
+                if (sort_dir_ == SORT_ASC) return sort_cmp_(a->get_data(), b->get_data(), static_cast<ColEnum>(sort_col_idx_));
+                return sort_cmp_(b->get_data(), a->get_data(), static_cast<ColEnum>(sort_col_idx_));
             });
         }
         

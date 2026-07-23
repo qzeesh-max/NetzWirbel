@@ -73,28 +73,28 @@ A draggable, resizable window container component.
   - `void set_on_close(std::function<void()> cb)`
 - **Getters**: `get_x()`, `get_y()`, `get_width()`, `get_height()`, `get_z_index()`
 
-## `Grid<T>`
+## `Grid<T, ColEnum>`
 A highly functional, sortable, and resizable data grid component.
 - **Constructor**: `Grid(Context* ctx)`
 - **`void add_column(const std::string& name, int default_width)`**: Defines a new column.
-- **`void set_on_render_row(std::function<void(std::shared_ptr<GridRow<T>>, const T&)> cb)`**: Sets the callback to render row cells based on data of type `T`.
-- **`std::shared_ptr<GridRow<T>> add_row(const T& data)`**: Adds a new row with the specified data.
+- **`void set_on_render_row(std::function<void(std::shared_ptr<GridRow<T, ColEnum>>, const T&)> cb)`**: Sets the callback to render row cells based on data of type `T`.
+- **`std::shared_ptr<GridRow<T, ColEnum>> add_row(const T& data)`**: Adds a new row with the specified data.
 - **`void clear_rows()`**: Removes all rows from the grid.
-- **`void set_on_cell_double_click(std::function<void(std::shared_ptr<GridRow<T>>, const std::string&)> cb)`**: Triggered when a cell is double-clicked.
+- **`void set_on_cell_double_click(std::function<void(std::shared_ptr<GridRow<T, ColEnum>>, ColEnum)> cb)`**: Triggered when a cell is double-clicked.
 - **`int get_col_width(size_t idx) const`**: Returns the current width of a specific column.
 - **Sorting Configuration**:
   - `int sort_col_idx_`: The index of the column currently being sorted.
   - `SortDirection sort_dir_`: Direction of the sort (`SORT_NONE`, `SORT_ASC`, `SORT_DESC`).
-  - `std::function<bool(const T& a, const T& b, int col_idx)> sort_cmp_`: Callback that performs the comparison between two rows for sorting.
+  - `std::function<bool(const T& a, const T& b, ColEnum col_idx)> sort_cmp_`: Callback that performs the comparison between two rows for sorting.
 - **`void apply_sort()`**: Re-sorts the rows based on the current sort configuration.
 
-### `GridRow<T>`
-A row within a `Grid<T>`.
-- **`void add_cell(const std::string& text, int width_px, const std::string& col_name = "")`**: Adds a text cell with a defined width to the row.
+### `GridRow<T, ColEnum>`
+A row within a `Grid<T, ColEnum>`.
+- **`void add_cell(const std::string& text, int width_px, std::optional<ColEnum> col_name = std::nullopt)`**: Adds a text cell with a defined width to the row.
 - **`std::shared_ptr<Element> get_cell(size_t index)`**: Retrieves the DOM element for a cell.
 - **`void update_data(const T& data)`**: Updates the underlying data object associated with the row.
 - **`T get_data() const`**: Retrieves the row's data object.
-- **`void set_on_double_click(std::function<void(GridRow<T>*, const std::string&)> cb)`**: Sets the internal double-click handler.
+- **`void set_on_double_click(std::function<void(GridRow<T, ColEnum>*, ColEnum)> cb)`**: Sets the internal double-click handler.
 
 ## Menus
 A powerful suite of components for creating traditional desktop-like menu systems.
