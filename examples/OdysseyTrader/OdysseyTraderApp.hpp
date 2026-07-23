@@ -221,6 +221,20 @@ private:
     append_win("rejections", rej_win_);
     append_win("preferences", pref_win_);
     
+    auto append_grid_order = [&](const std::string& key, const std::vector<int>& order) {
+        if (order.empty()) return;
+        ss << ", \"" << key << "\": [";
+        for (size_t i = 0; i < order.size(); ++i) {
+            if (i > 0) ss << ", ";
+            ss << order[i];
+        }
+        ss << "]";
+    };
+    if (md_grid_) append_grid_order("md_grid_order", md_grid_->get_column_orders());
+    if (order_grid_) append_grid_order("order_grid_order", order_grid_->get_column_orders());
+    if (exec_grid_) append_grid_order("exec_grid_order", exec_grid_->get_column_orders());
+    if (reject_grid_) append_grid_order("reject_grid_order", reject_grid_->get_column_orders());
+    
     ss << ", \"market_data_symbols\": [";
     bool first = true;
     for (const auto& m : market_data_) {
@@ -247,34 +261,40 @@ private:
         size_t comma_pos = layout_json.find_first_of(",}", colon_pos);
         if (colon_pos != std::string::npos && comma_pos != std::string::npos) {
             std::string val = layout_json.substr(colon_pos + 1, comma_pos - colon_pos - 1);
-            try { pref_max_aggressive_ = std::stod(val); } catch (...) {}
+            try { pref_max_notional_ = std::stod(val); } catch (...) {}
         }
     }
     
-    size_t not_pos = layout_json.find("\"pref_max_notional\"");
-    if (not_pos != std::string::npos) {
-        size_t c = layout_json.find(":", not_pos);
-        if (c != std::string::npos) {
-          size_t n = layout_json.find_first_of(",}", c);
-          std::string val = layout_json.substr(c+1, n - c - 1);
-          try { pref_max_notional_ = std::stod(val); } catch (...) {}
+    auto extract_grid_order = [&](const std::string& key) -> std::vector<int> {
+        std::vector<int> res;
+        size_t pos = layout_json.find("\"" + key + "\"");
+        if (pos != std::string::npos) {
+            size_t start_bracket = layout_json.find("[", pos);
+            size_t end_bracket = layout_json.find("]", pos);
+            if (start_bracket != std::string::npos && end_bracket != std::string::npos && start_bracket < end_bracket) {
+                std::string array_str = layout_json.substr(start_bracket + 1, end_bracket - start_bracket - 1);
+                std::stringstream ss_arr(array_str);
+                std::string item;
+                while (std::getline(ss_arr, item, ',')) {
+                    try { res.push_back(std::stoi(item)); } catch(...) {}
+                }
+            }
         }
-    }
+        return res;
+    };
     
-    if (pref_qty_input_) {
-        pref_qty_input_->set_value(std::to_string(pref_default_qty_));
-    }
-    if (pref_agg_input_) {
-        std::stringstream ss;
-        ss << std::fixed << std::setprecision(2) << pref_max_aggressive_;
-        pref_agg_input_->set_value(ss.str());
-    }
-    if (pref_not_input_) {
-        std::stringstream ss;
-        ss << (long long)pref_max_notional_;
-        pref_not_input_->set_value(ss.str());
-    }
+    auto md_ord = extract_grid_order("md_grid_order");
+    if (!md_ord.empty() && md_grid_) md_grid_->set_column_orders(md_ord);
     
+    auto order_ord = extract_grid_order("order_grid_order");
+    if (!order_ord.empty() && order_grid_) order_grid_->set_column_orders(order_ord);
+    
+    auto exec_ord = extract_grid_order("exec_grid_order");
+    if (!exec_ord.empty() && exec_grid_) exec_grid_->set_column_orders(exec_ord);
+    
+    auto reject_ord = extract_grid_order("reject_grid_order");
+    if (!reject_ord.empty() && reject_grid_) reject_grid_->set_column_orders(reject_ord);
+
     auto extract_win = [&](const std::string& key, std::shared_ptr<Window> w) {
         if (!w) return;
         size_t pos = layout_json.find("\"" + key + "\"");
@@ -580,8 +600,13 @@ private:
     md_grid_->add_column("Ask", 80);
     md_grid_->add_column("Ask Size", 70);
     md_grid_->add_column("Trd Volume", 80);
-    md_grid_->add_column("Last", 80);
-    md_grid_->add_column("Tot Volume", 90);
+    md_grid_->add_column("Last", 60);
+    md_grid_->add_column("Volume", 60);
+
+    md_grid_->set_frozen_columns(1);
+    auto order_cb = [this]() { save_layout(); };
+    md_grid_->set_on_column_order_changed(order_cb);
+    
     md_grid_->set_on_render_row([this](std::shared_ptr<GridRow<OdysseyMarketData, MdCol>> row, const OdysseyMarketData& data) {
         row->add_cell("", md_grid_->get_col_width(0), MdCol::Symbol);
         
@@ -790,8 +815,11 @@ private:
     order_grid_->add_column("Qty", 70);
     order_grid_->add_column("CumQty", 70);
     order_grid_->add_column("Leaves", 70);
-    order_grid_->add_column("Status", 100);
-    order_grid_->add_column("Orig ID", 100);
+    order_grid_->add_column("Status", 80);
+    order_grid_->add_column("OrigId", 120);
+
+    order_grid_->set_on_column_order_changed(order_cb);
+    
     order_grid_->set_on_render_row([this](std::shared_ptr<GridRow<OdysseyOrderData, OrderCol>> row, const OdysseyOrderData& ord) {
         row->add_cell(ord.id, order_grid_->get_col_width(0));
         row->add_cell(ord.symbol, order_grid_->get_col_width(1));
@@ -833,8 +861,11 @@ private:
     exec_grid_->add_column("Ord ID", 100);
     exec_grid_->add_column("Symbol", 80);
     exec_grid_->add_column("Side", 60);
-    exec_grid_->add_column("Last Qty", 80);
-    exec_grid_->add_column("Last Px", 80);
+    exec_grid_->add_column("LastQty", 60);
+    exec_grid_->add_column("LastPx", 60);
+
+    exec_grid_->set_on_column_order_changed(order_cb);
+    
     exec_grid_->set_on_render_row([this](std::shared_ptr<GridRow<OdysseyExecutionData, ExecCol>> row, const OdysseyExecutionData& ex) {
         row->add_cell(ex.id, exec_grid_->get_col_width(0));
         row->add_cell(ex.id, exec_grid_->get_col_width(1));
@@ -859,8 +890,11 @@ private:
     };
     reject_grid_->add_column("Orig ID", 100);
     reject_grid_->add_column("Msg Type", 120);
-    reject_grid_->add_column("Status", 100);
-    reject_grid_->add_column("Text", 200);
+    reject_grid_->add_column("Status", 80);
+    reject_grid_->add_column("Text", 250);
+
+    reject_grid_->set_on_column_order_changed(order_cb);
+    
     reject_grid_->set_on_render_row([this](std::shared_ptr<GridRow<OdysseyRejectData, RejectCol>> row, const OdysseyRejectData& rej) {
         row->add_cell(rej.id, reject_grid_->get_col_width(0));
         row->add_cell("", reject_grid_->get_col_width(1));

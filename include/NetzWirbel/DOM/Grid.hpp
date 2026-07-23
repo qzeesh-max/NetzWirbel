@@ -151,6 +151,10 @@ public:
         
         int col_idx = cols_.size();
         label_cont->add_event_listener(ctx_->strings.click, [this, col_idx](const Event&) {
+            if (was_dragging_col_) {
+                was_dragging_col_ = false;
+                return;
+            }
             if (!sort_enabled_) return;
             if (resizing_col_ != -1) return;
             if (sort_col_idx_ == col_idx) {
@@ -164,6 +168,61 @@ public:
             apply_sort();
         });
         
+        label_cont->add_event_listener("mousedown", [this, col_idx](const Event& e) {
+            auto* me = dynamic_cast<const MouseEvent*>(&e);
+            if (!me) return;
+            if (resizing_col_ != -1) return;
+            if (get_visual_index(col_idx) < frozen_cols_) return; // frozen column
+            
+            dragging_col_ = col_idx;
+            start_x_ = me->get_client_x();
+            was_dragging_col_ = false;
+            
+            cols_[col_idx].header_el->set_styles({{"opacity", "0.5"}});
+            
+            NetzWirbel::g_grid_mousemove = [this](double client_x) {
+                if (dragging_col_ >= 0 && dragging_col_ < cols_.size()) {
+                    double dx = client_x - start_x_;
+                    if (std::abs(dx) > 3) was_dragging_col_ = true; // Drag threshold
+                    
+                    int v_idx = get_visual_index(dragging_col_);
+                    
+                    if (dx > 0 && v_idx < cols_.size() - 1) {
+                        int next_col = get_col_at_visual_index(v_idx + 1);
+                        if (next_col != -1) {
+                            if (dx > cols_[next_col].current_width / 2.0) {
+                                std::swap(col_order_[dragging_col_], col_order_[next_col]);
+                                start_x_ += cols_[next_col].current_width;
+                                apply_column_orders();
+                                if (on_column_order_changed_) on_column_order_changed_();
+                                return; // handle next frame
+                            }
+                        }
+                    } else if (dx < 0 && v_idx > frozen_cols_) {
+                        int prev_col = get_col_at_visual_index(v_idx - 1);
+                        if (prev_col != -1) {
+                            if (-dx > cols_[prev_col].current_width / 2.0) {
+                                std::swap(col_order_[dragging_col_], col_order_[prev_col]);
+                                start_x_ -= cols_[prev_col].current_width;
+                                apply_column_orders();
+                                if (on_column_order_changed_) on_column_order_changed_();
+                                return;
+                            }
+                        }
+                    }
+                }
+            };
+            
+            NetzWirbel::g_grid_mouseup = [this]() {
+                if (dragging_col_ >= 0 && dragging_col_ < cols_.size()) {
+                    cols_[dragging_col_].header_el->set_styles({{"opacity", "1.0"}});
+                }
+                dragging_col_ = -1;
+                NetzWirbel::g_grid_mousemove = nullptr;
+                NetzWirbel::g_grid_mouseup = nullptr;
+            };
+        });
+
         th->append_child(label_cont);
         
         // Resizer border
@@ -217,11 +276,67 @@ public:
         cdef.header_el = th;
         
         cols_.push_back(cdef);
+        if (col_idx >= col_order_.size()) {
+            col_order_.push_back(col_idx);
+        }
+        th->set_styles({{"order", std::to_string(col_order_[col_idx])}});
         header_container_->append_child(th);
     }
     
     void set_on_render_row(std::function<void(std::shared_ptr<GridRow<T, ColEnum>>, const T&)> cb) {
         on_render_row_ = cb;
+    }
+
+
+    void set_frozen_columns(int count) {
+        frozen_cols_ = count;
+    }
+    
+    std::vector<int> get_column_orders() const {
+        return col_order_;
+    }
+    
+    void set_column_orders(const std::vector<int>& orders) {
+        col_order_ = orders;
+        if (col_order_.size() > cols_.size()) {
+            col_order_.resize(cols_.size());
+        }
+        apply_column_orders();
+    }
+    
+    std::function<void()> on_column_order_changed_;
+    void set_on_column_order_changed(std::function<void()> cb) {
+        on_column_order_changed_ = cb;
+    }
+
+    void apply_column_orders() {
+        for (size_t i = 0; i < cols_.size(); ++i) {
+            if (cols_[i].header_el) {
+                cols_[i].header_el->set_styles({{"order", std::to_string(col_order_[i])}});
+            }
+        }
+        for (auto& row : rows_) {
+            for (size_t i = 0; i < cols_.size(); ++i) {
+                auto cell = row->get_cell(i);
+                if (cell) {
+                    cell->set_styles({{"order", std::to_string(col_order_[i])}});
+                }
+            }
+        }
+    }
+    
+    int get_visual_index(int physical_idx) const {
+        if (physical_idx >= 0 && physical_idx < col_order_.size()) {
+            return col_order_[physical_idx];
+        }
+        return -1;
+    }
+    
+    int get_col_at_visual_index(int v_idx) const {
+        for (size_t i = 0; i < col_order_.size(); ++i) {
+            if (col_order_[i] == v_idx) return i;
+        }
+        return -1;
     }
 
     void clear_rows() {
@@ -248,6 +363,13 @@ public:
         
         if (on_render_row_) {
             on_render_row_(row, data);
+        }
+        
+        for (size_t i = 0; i < cols_.size(); ++i) {
+            auto cell = row->get_cell(i);
+            if (cell && i < col_order_.size()) {
+                cell->set_styles({{"order", std::to_string(col_order_[i])}});
+            }
         }
         
         rows_.push_back(row);
@@ -319,6 +441,11 @@ public:
     SortDirection sort_dir_ = SORT_NONE;
     std::function<bool(const T& a, const T& b, ColEnum col_idx)> sort_cmp_;
     bool sort_enabled_ = true;
+
+    int frozen_cols_ = 0;
+    int dragging_col_ = -1;
+    bool was_dragging_col_ = false;
+    std::vector<int> col_order_;
 
     void set_sort_enabled(bool enabled) { sort_enabled_ = enabled; }
     
