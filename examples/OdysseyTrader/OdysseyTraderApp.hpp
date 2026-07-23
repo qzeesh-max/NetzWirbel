@@ -555,15 +555,17 @@ private:
     md_grid_ = std::make_shared<Grid<OdysseyMarketData>>(ctx_);
     md_grid_->add_column("Symbol", 80);
     md_grid_->sort_cmp_ = [](const OdysseyMarketData& a, const OdysseyMarketData& b, int col_idx) {
-        if (col_idx == 0) return a.symbol < b.symbol;
-        if (col_idx == 1) return a.bidSz < b.bidSz;
-        if (col_idx == 2) return a.bidPx < b.bidPx;
-        if (col_idx == 3) return a.askPx < b.askPx;
-        if (col_idx == 4) return a.askSz < b.askSz;
-        if (col_idx == 5) return a.lastSz < b.lastSz;
-        if (col_idx == 6) return a.lastPx < b.lastPx;
-        if (col_idx == 7) return a.volume < b.volume;
-        return false;
+        switch (col_idx) {
+            case 0: return a.symbol < b.symbol;
+            case 1: return a.bidSz < b.bidSz;
+            case 2: return a.bidPx < b.bidPx;
+            case 3: return a.askPx < b.askPx;
+            case 4: return a.askSz < b.askSz;
+            case 5: return a.lastSz < b.lastSz;
+            case 6: return a.lastPx < b.lastPx;
+            case 7: return a.volume < b.volume;
+            default: return false;
+        }
     };
     md_grid_->add_column("Bid Size", 70);
     md_grid_->add_column("Bid", 80);
@@ -762,15 +764,17 @@ private:
     order_grid_ = std::make_shared<Grid<OdysseyOrderData>>(ctx_);
     order_grid_->add_column("Ord ID", 100);
     order_grid_->sort_cmp_ = [](const OdysseyOrderData& a, const OdysseyOrderData& b, int col_idx) {
-        if (col_idx == 0) return a.id < b.id;
-        if (col_idx == 1) return a.symbol < b.symbol;
-        if (col_idx == 2) return a.side < b.side;
-        if (col_idx == 3) return a.price < b.price;
-        if (col_idx == 4) return a.qty < b.qty;
-        if (col_idx == 5) return a.cumQty < b.cumQty;
-        if (col_idx == 6) return a.leaves < b.leaves;
-        if (col_idx == 7) return a.status < b.status;
-        return false;
+        switch (col_idx) {
+            case 0: return a.id < b.id;
+            case 1: return a.symbol < b.symbol;
+            case 2: return a.side < b.side;
+            case 3: return a.price < b.price;
+            case 4: return a.qty < b.qty;
+            case 5: return a.cumQty < b.cumQty;
+            case 6: return a.leaves < b.leaves;
+            case 7: return a.status < b.status;
+            default: return false;
+        }
     };
     order_grid_->add_column("Symbol", 80);
     order_grid_->add_column("Side", 60);
@@ -808,12 +812,15 @@ private:
     exec_grid_ = std::make_shared<Grid<OdysseyExecutionData>>(ctx_);
     exec_grid_->add_column("Exec ID", 100);
     exec_grid_->sort_cmp_ = [](const OdysseyExecutionData& a, const OdysseyExecutionData& b, int col_idx) {
-        if (col_idx == 0 || col_idx == 1) return a.id < b.id;
-        if (col_idx == 2) return a.symbol < b.symbol;
-        if (col_idx == 3) return a.side < b.side;
-        if (col_idx == 4) return a.lastSz < b.lastSz;
-        if (col_idx == 5) return a.lastPx < b.lastPx;
-        return false;
+        switch (col_idx) {
+            case 0:
+            case 1: return a.id < b.id;
+            case 2: return a.symbol < b.symbol;
+            case 3: return a.side < b.side;
+            case 4: return a.lastSz < b.lastSz;
+            case 5: return a.lastPx < b.lastPx;
+            default: return false;
+        }
     };
     exec_grid_->add_column("Ord ID", 100);
     exec_grid_->add_column("Symbol", 80);
@@ -833,11 +840,14 @@ private:
     reject_grid_ = std::make_shared<Grid<OdysseyRejectData>>(ctx_);
     reject_grid_->add_column("ID", 100);
     reject_grid_->sort_cmp_ = [](const OdysseyRejectData& a, const OdysseyRejectData& b, int col_idx) {
-        if (col_idx == 0 || col_idx == 1) return a.id < b.id;
-        if (col_idx == 2) return a.refMsgType < b.refMsgType;
-        if (col_idx == 3) return a.status < b.status;
-        if (col_idx == 4) return a.text < b.text;
-        return false;
+        switch (col_idx) {
+            case 0:
+            case 1: return a.id < b.id;
+            case 2: return a.refMsgType < b.refMsgType;
+            case 3: return a.status < b.status;
+            case 4: return a.text < b.text;
+            default: return false;
+        }
     };
     reject_grid_->add_column("Orig ID", 100);
     reject_grid_->add_column("Msg Type", 120);
