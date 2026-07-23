@@ -59,7 +59,20 @@ public:
 
         g_grid = std::make_shared<Grid<MarketDataTickerRow>>(ctx);
         ctx->register_element(g_grid);
-        g_grid->set_sort_enabled(false);
+        g_grid->sort_cmp_ = [](const MarketDataTickerRow& a, const MarketDataTickerRow& b, int col_idx) {
+            switch (col_idx) {
+                case 0: return a.symbol < b.symbol;
+                case 1: return a.bid_size < b.bid_size;
+                case 2: return a.bid_px < b.bid_px;
+                case 3: return a.ask_px < b.ask_px;
+                case 4: return a.ask_size < b.ask_size;
+                case 5: return a.last_px < b.last_px;
+                case 6: return a.total_vol < b.total_vol;
+                case 7: return a.time < b.time;
+                default: return false;
+            }
+        };
+        g_grid->set_frozen_columns(1);
         g_grid->set_attribute(ctx_->strings.style, "flex: 1; overflow-y: auto; overflow-x: auto; background-color: #121212; color: #e0e0e0;");
         g_app->append_child(g_grid);
 
@@ -91,14 +104,14 @@ public:
         g_grid->add_column("Time", 100);
 
         g_grid->set_on_render_row([this](std::shared_ptr<GridRow<MarketDataTickerRow>> row, const MarketDataTickerRow& data) {
-            row->add_cell(data.symbol, 100, "Symbol");
-            row->add_cell(std::to_string(data.bid_size), 100, "Bid Size");
-            row->add_cell(format_price(data.bid_px), 100, "Bid Price");
-            row->add_cell(format_price(data.ask_px), 100, "Ask Price");
-            row->add_cell(std::to_string(data.ask_size), 100, "Ask Size");
-            row->add_cell(format_price(data.last_px), 100, "Last Price");
-            row->add_cell(std::to_string(data.total_vol), 150, "Total Vol");
-            row->add_cell(data.time, 100, "Time");
+            row->add_cell(data.symbol, 100, 0);
+            row->add_cell(std::to_string(data.bid_size), 100, 1);
+            row->add_cell(format_price(data.bid_px), 100, 2);
+            row->add_cell(format_price(data.ask_px), 100, 3);
+            row->add_cell(std::to_string(data.ask_size), 100, 4);
+            row->add_cell(format_price(data.last_px), 100, 5);
+            row->add_cell(std::to_string(data.total_vol), 150, 6);
+            row->add_cell(data.time, 100, 7);
 
             std::string row_class = (row->seq_ % 2 == 0) ? "md-row-even" : "md-row-odd";
             row->set_attribute("class", row_class);
