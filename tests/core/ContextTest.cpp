@@ -31,8 +31,8 @@ protected:
     Context* ctx;
 
     void SetUp() override {
-        mem_cpp.resize(10240);
-        mem_js.resize(10240);
+        mem_cpp.resize(RingBuffer::calculate_size(1024, sizeof(Command)));
+        mem_js.resize(RingBuffer::calculate_size(1024, sizeof(EventMsg)));
         ctx = new Context(mem_cpp.data(), mem_js.data(), 1024);
     }
 

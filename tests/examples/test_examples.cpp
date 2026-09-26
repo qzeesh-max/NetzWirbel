@@ -49,8 +49,8 @@ protected:
 #ifdef __EMSCRIPTEN__
         js_mock_websocket_examples();
 #endif
-        cpp_to_js_mem = std::malloc(4096 * 32 + 24);
-        js_to_cpp_mem = std::malloc(4096 * 64 + 24);
+        cpp_to_js_mem = std::malloc(RingBuffer::calculate_size(4096, sizeof(Command)));
+        js_to_cpp_mem = std::malloc(RingBuffer::calculate_size(4096, sizeof(EventMsg)));
         ctx = std::make_unique<Context>(cpp_to_js_mem, js_to_cpp_mem, 4096);
     }
 
